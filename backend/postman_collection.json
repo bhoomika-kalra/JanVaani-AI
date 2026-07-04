@@ -1,0 +1,322 @@
+{
+  "info": {
+    "name": "JanVaani AI Backend APIs",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Citizen",
+      "item": [
+        {
+          "name": "Register Citizen",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone_number\": \"9876543210\",\n  \"name\": \"Rahul Sharma\",\n  \"constituency\": \"New Delhi\",\n  \"language_preference\": \"Hindi\"\n}"
+            },
+            "url": {
+              "raw": "http://127.0.0.1:8000/api/v1/citizens/register",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "8000",
+              "path": ["api", "v1", "citizens", "register"]
+            }
+          }
+        },
+        {
+          "name": "Login Citizen",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone_number\": \"9876543210\"\n}"
+            },
+            "url": {
+              "raw": "http://127.0.0.1:8000/api/v1/citizens/login",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "8000",
+              "path": ["api", "v1", "citizens", "login"]
+            }
+          }
+        },
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{citizen_token}}" }
+            ],
+            "url": {
+              "raw": "http://127.0.0.1:8000/api/v1/citizens/profile",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "8000",
+              "path": ["api", "v1", "citizens", "profile"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Complaints",
+      "item": [
+        {
+          "name": "Submit Complaint",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{citizen_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Broken Streetlight\",\n  \"description\": \"Streetlight on MG road is flickering.\",\n  \"department_id\": 1,\n  \"location_lat\": 28.6139,\n  \"location_lng\": 77.2090,\n  \"address\": \"MG Road\"\n}"
+            },
+            "url": {
+              "raw": "http://127.0.0.1:8000/api/v1/complaints/",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "8000",
+              "path": ["api", "v1", "complaints", ""]
+            }
+          }
+        },
+        {
+          "name": "Get Tracking",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://127.0.0.1:8000/api/v1/complaints/1/tracking",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "8000",
+              "path": ["api", "v1", "complaints", "1", "tracking"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. AI Mock Engine",
+      "item": [
+        {
+          "name": "Analyze Text",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"हमारे गांव में पानी की समस्या है\"\n}"
+            },
+            "url": {
+              "raw": "http://127.0.0.1:8000/api/v1/ai/analyze-text",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "8000",
+              "path": ["api", "v1", "ai", "analyze-text"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. MP",
+      "item": [
+        {
+          "name": "Login MP",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"mp@janvaani.gov.in\",\n  \"password\": \"securepassword123\"\n}"
+            },
+            "url": {
+              "raw": "http://127.0.0.1:8000/api/v1/mp/login",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "8000",
+              "path": ["api", "v1", "mp", "login"]
+            }
+          }
+        },
+        {
+          "name": "Dashboard Overview",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{mp_token}}" }
+            ],
+            "url": {
+              "raw": "http://127.0.0.1:8000/api/v1/mp/dashboard/overview",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "8000",
+              "path": ["api", "v1", "mp", "dashboard", "overview"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Workflow",
+      "item": [
+        {
+          "name": "Approve Complaint",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{mp_token}}" }
+            ],
+            "url": {
+              "raw": "http://127.0.0.1:8000/api/v1/workflow/1/approve",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "8000",
+              "path": ["api", "v1", "workflow", "1", "approve"]
+            }
+          }
+        },
+        {
+          "name": "Assign Department",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{mp_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"department_name\": \"PWD\",\n  \"description\": \"Please dispatch repair crew.\"\n}"
+            },
+            "url": {
+              "raw": "http://127.0.0.1:8000/api/v1/workflow/1/assign-department",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "8000",
+              "path": ["api", "v1", "workflow", "1", "assign-department"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Notifications",
+      "item": [
+        {
+          "name": "Send Mock SMS",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"citizen_id\": 1,\n  \"message\": \"Your project budget was approved today!\"\n}"
+            },
+            "url": {
+              "raw": "http://127.0.0.1:8000/api/v1/notifications/send-sms",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "8000",
+              "path": ["api", "v1", "notifications", "send-sms"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Reports",
+      "item": [
+        {
+          "name": "Download Complaints CSV",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{mp_token}}" }
+            ],
+            "url": {
+              "raw": "http://127.0.0.1:8000/api/v1/reports/complaints-csv",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "8000",
+              "path": ["api", "v1", "reports", "complaints-csv"]
+            }
+          }
+        },
+        {
+          "name": "AI Summary",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{mp_token}}" }
+            ],
+            "url": {
+              "raw": "http://127.0.0.1:8000/api/v1/reports/ai-summary",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "8000",
+              "path": ["api", "v1", "reports", "ai-summary"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "8. Transparency",
+      "item": [
+        {
+          "name": "Public Overview",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://127.0.0.1:8000/api/v1/transparency/overview",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "8000",
+              "path": ["api", "v1", "transparency", "overview"]
+            }
+          }
+        },
+        {
+          "name": "Public Before-After",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://127.0.0.1:8000/api/v1/transparency/before-after",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "8000",
+              "path": ["api", "v1", "transparency", "before-after"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "citizen_token",
+      "value": "INSERT_CITIZEN_TOKEN_HERE"
+    },
+    {
+      "key": "mp_token",
+      "value": "INSERT_MP_TOKEN_HERE"
+    }
+  ]
+}

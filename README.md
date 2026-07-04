@@ -8,7 +8,15 @@
 
 **JanVaani AI** is an AI-powered Constituency Decision Support System built for the **Google Build With AI Competition** under **Track 1 – People's Priorities (AI for Constituency Development Planning)**.
 
-It transforms scattered citizen complaints into data-driven government development decisions — making governance more transparent, inclusive, and impact-driven.
+It transforms scattered citizen complaints into### Phase 3-12: Full Backend Ecosystem
+- Complete Citizen, MP, and Admin authentication.
+- Secure Role-Based Access Control (RBAC) and real JWT integration.
+- Robust file upload validation (extensions and file size limits).
+- Automated AI mock services.
+- Fully automated Complaint tracking and Notification workflow engine.
+- MP Dashboard APIs (Insights, Trends, Geo-Hotspots).
+- Public Transparency APIs.
+- Logging middleware and unified JSON error handling.
 
 ---
 

@@ -208,7 +208,7 @@ const MPDashboard = () => {
                 {[
                   { label: 'Total Complaints', value: regionData.totalComplaints, icon: <FileText size={20}/>, color: 'blue' },
                   { label: 'Active Issues', value: regionData.activeIssues, icon: <AlertTriangle size={20}/>, color: 'orange' },
-                  { label: 'AI Recommended', value: regionData.aiRecommended, icon: <BrainCircuit size={20}/>, color: 'indigo' },
+                  { label: 'AI Recommended', value: regionData.aiRecommended, icon: <BrainCircuit size={20}/>, color: 'blue' },
                   { label: 'High Priority', value: regionData.highPriority, icon: <ShieldAlert size={20}/>, color: 'red' },
                   { label: 'Completed Works', value: regionData.completedWorks, icon: <CheckCircle2 size={20}/>, color: 'emerald' },
                   { label: 'Citizen Engagement', value: regionData.citizenParticipation, icon: <Users size={20}/>, color: 'slate' },
@@ -227,28 +227,28 @@ const MPDashboard = () => {
 
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* AI Recommendation of the Day */}
-                <div className="bg-gradient-to-br from-indigo-900 to-slate-900 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden group flex flex-col">
+                <div className="bg-gradient-to-br from-blue-900 to-slate-900 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden group flex flex-col">
                   <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
                     <BrainCircuit size={120} />
                   </div>
                   <div className="relative z-10 flex-1">
-                    <div className="inline-flex items-center gap-2 bg-indigo-500/30 px-3 py-1.5 rounded-lg text-indigo-200 text-[10px] font-black uppercase tracking-widest mb-6 border border-indigo-400/30">
+                    <div className="inline-flex items-center gap-2 bg-blue-500/30 px-3 py-1.5 rounded-lg text-blue-200 text-[10px] font-black uppercase tracking-widest mb-6 border border-blue-400/30">
                       <Cpu size={14}/> Recommendation of the Day
                     </div>
                     <h3 className="text-2xl font-black mb-2">Severe Waterlogging in Ward 14</h3>
-                    <p className="text-indigo-200 text-sm font-medium mb-6 line-clamp-2">AI predicts catastrophic road damage if not resolved before upcoming monsoon. Immediate drainage clearance required.</p>
+                    <p className="text-blue-200 text-sm font-medium mb-6 line-clamp-2">AI predicts catastrophic road damage if not resolved before upcoming monsoon. Immediate drainage clearance required.</p>
                     <div className="grid grid-cols-2 gap-4 mb-8">
                       <div className="bg-black/20 p-4 rounded-xl border border-white/5">
-                        <span className="block text-[10px] text-indigo-300 font-bold uppercase tracking-widest mb-1">AI Confidence</span>
+                        <span className="block text-[10px] text-blue-300 font-bold uppercase tracking-widest mb-1">AI Confidence</span>
                         <span className="text-xl font-black text-white">98.5%</span>
                       </div>
                       <div className="bg-black/20 p-4 rounded-xl border border-white/5">
-                        <span className="block text-[10px] text-indigo-300 font-bold uppercase tracking-widest mb-1">Est. Budget</span>
+                        <span className="block text-[10px] text-blue-300 font-bold uppercase tracking-widest mb-1">Est. Budget</span>
                         <span className="text-xl font-black text-white">₹4.5L</span>
                       </div>
                     </div>
                   </div>
-                  <button onClick={() => setActiveNav('AI Insights')} className="relative z-10 w-full bg-white text-indigo-900 py-4 rounded-xl font-bold text-sm hover:bg-indigo-50 transition-colors flex items-center justify-center gap-2">
+                  <button onClick={() => setActiveNav('AI Insights')} className="relative z-10 w-full bg-white text-blue-900 py-4 rounded-xl font-bold text-sm hover:bg-blue-50 transition-colors flex items-center justify-center gap-2">
                     View AI Reasoning <ArrowRight size={16}/>
                   </button>
                 </div>
@@ -767,8 +767,8 @@ const MPDashboard = () => {
                </div>
 
                <div className="space-y-6">
-                 <div className="bg-gradient-to-b from-indigo-900 to-slate-900 p-8 rounded-3xl shadow-lg text-white">
-                    <h3 className="text-lg font-black mb-6 flex items-center gap-2"><Cpu size={20} className="text-indigo-300"/> AI Sentiment Analysis</h3>
+                 <div className="bg-gradient-to-b from-blue-900 to-slate-900 p-8 rounded-3xl shadow-lg text-white">
+                    <h3 className="text-lg font-black mb-6 flex items-center gap-2"><Cpu size={20} className="text-blue-300"/> AI Sentiment Analysis</h3>
                     <div className="space-y-6">
                       <div>
                         <div className="flex justify-between text-sm font-bold mb-2">

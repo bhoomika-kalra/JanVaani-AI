@@ -47,7 +47,7 @@ const MPLogin = () => {
         {/* Subtle Blue Gradients */}
         <div className="absolute inset-0 z-0 pointer-events-none opacity-40 mix-blend-multiply">
           <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-blue-200 rounded-full blur-[100px]"></div>
-          <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-indigo-200 rounded-full blur-[120px]"></div>
+          <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-blue-200 rounded-full blur-[120px]"></div>
         </div>
 
         {/* Branding Content */}
@@ -68,13 +68,13 @@ const MPLogin = () => {
           </h2>
 
           <h3 className="text-[22px] sm:text-[28px] font-bold leading-[1.3] tracking-tight text-slate-800 mb-10">
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">AI-powered</span>{' '}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">constituency intelligence</span>{' '}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-600">AI-powered</span>{' '}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-600">constituency intelligence</span>{' '}
             for{' '}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">data-driven development</span>.
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-600">data-driven development</span>.
           </h3>
 
-          <div className="w-16 h-1 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full mb-12 opacity-80"></div>
+          <div className="w-16 h-1 bg-gradient-to-r from-blue-500 to-blue-500 rounded-full mb-12 opacity-80"></div>
 
           <div className="flex flex-col items-center">
             <p className="text-[14px] sm:text-[16px] font-bold text-slate-700 tracking-wide mb-3">
@@ -99,8 +99,8 @@ const MPLogin = () => {
             
             <div className="flex flex-col items-center text-center w-full mb-[36px]">
               {/* Shield Icon with outer ring */}
-              <div className="w-[84px] h-[84px] rounded-full bg-indigo-50 flex items-center justify-center mb-[40px]">
-                <div className="w-[60px] h-[60px] rounded-full bg-[#4F46E5] flex items-center justify-center shadow-lg shadow-indigo-500/40">
+              <div className="w-[84px] h-[84px] rounded-full bg-blue-50 flex items-center justify-center mb-[40px]">
+                <div className="w-[60px] h-[60px] rounded-full bg-[#4F46E5] flex items-center justify-center shadow-lg shadow-blue-500/40">
                   <ShieldCheck size={32} className="text-white" strokeWidth={1.5} />
                 </div>
               </div>
@@ -125,7 +125,7 @@ const MPLogin = () => {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="block w-full h-[60px] pl-[48px] pr-4 border border-slate-200 rounded-[20px] bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-[18px] font-medium transition-all"
+                    className="block w-full h-[60px] pl-[48px] pr-4 border border-slate-200 rounded-[20px] bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-[18px] font-medium transition-all"
                     placeholder="      Enter your official email or mobile number"
                   />
                 </div>
@@ -145,13 +145,13 @@ const MPLogin = () => {
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="block w-full h-[60px] pl-[48px] pr-[48px] border border-slate-200 rounded-[20px] bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-[18px] font-medium transition-all"
+                    className="block w-full h-[60px] pl-[48px] pr-[48px] border border-slate-200 rounded-[20px] bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-[18px] font-medium transition-all"
                     placeholder="      Enter your password or OTP"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-indigo-600 transition-colors focus:outline-none"
+                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-blue-600 transition-colors focus:outline-none"
                   >
                     {showPassword ? <EyeOff size={22} strokeWidth={1.5} /> : <Eye size={22} strokeWidth={1.5} />}
                   </button>
@@ -174,7 +174,7 @@ const MPLogin = () => {
                   </label>
                 </div>
                 <div>
-                  <button type="button" className="text-[16px] font-bold text-[#4F46E5] hover:text-indigo-700 transition-colors">
+                  <button type="button" className="text-[16px] font-bold text-[#4F46E5] hover:text-blue-700 transition-colors">
                     Forgot Password / Request OTP?
                   </button>
                 </div>
@@ -184,7 +184,7 @@ const MPLogin = () => {
               <div className="w-full">
                 <button
                   type="submit"
-                  className="w-full flex justify-center items-center gap-2 h-[60px] border border-transparent rounded-[20px] shadow-[0_4px_14px_rgba(79,70,229,0.25)] text-[20px] font-bold text-white bg-[#4F46E5] hover:bg-[#4338CA] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all hover:-translate-y-0.5"
+                  className="w-full flex justify-center items-center gap-2 h-[60px] border border-transparent rounded-[20px] shadow-[0_4px_14px_rgba(79,70,229,0.25)] text-[20px] font-bold text-white bg-[#4F46E5] hover:bg-[#4338CA] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all hover:-translate-y-0.5"
                 >
                   Access Dashboard <ArrowRight size={22} strokeWidth={2} />
                 </button>
@@ -204,7 +204,7 @@ const MPLogin = () => {
               <div className="w-full text-center mt-[8px]">
                 <p className="text-[18px] text-slate-600 font-medium">
                   New MP / Official?{' '}
-                  <button onClick={() => navigate('/mp-register')} className="font-bold text-[#3B5BFF] hover:text-indigo-600 transition-colors">
+                  <button onClick={() => navigate('/mp-register')} className="font-bold text-[#3B5BFF] hover:text-blue-600 transition-colors">
                     Create Account
                   </button>
                 </p>

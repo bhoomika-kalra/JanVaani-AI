@@ -18,6 +18,15 @@ const LandingPage = () => {
   const navigate = useNavigate();
   const [animationStarted, setAnimationStarted] = useState(false);
 
+  const handleCitizenStart = () => {
+    const profile = localStorage.getItem('janvaani_citizen_profile');
+    if (profile) {
+      navigate('/citizen');
+    } else {
+      navigate('/citizen-register');
+    }
+  };
+
   useEffect(() => {
     const timer = setTimeout(() => {
       setAnimationStarted(true);
@@ -33,46 +42,46 @@ const LandingPage = () => {
         className="absolute inset-0 w-full h-full bg-cover bg-center bg-no-repeat pointer-events-none z-0"
         style={{ backgroundImage: `url(${heroBg})` }}
       >
-        <div className="absolute inset-0 bg-white/35" />
-        <div className="absolute inset-0 bg-gradient-to-b from-white/5 via-white/30 to-[#FAFAFA]/80" />
+        <div className="absolute inset-0 bg-white/10" />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/10 to-[#FAFAFA]/50" />
       </div>
 
       <style>{`
         .animate-hero-logo-proper {
           animation:
-            heroEntrance 1.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards,
-            heroFloat 6s ease-in-out 1.5s infinite;
+            heroEntranceSoft 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards,
+            heroFloatGlow 6s ease-in-out 1.2s infinite;
         }
 
-        @keyframes heroEntrance {
+        @keyframes heroEntranceSoft {
           0% {
             opacity: 0;
-            transform: scale(0.86) translateY(24px);
+            transform: translateY(30px) scale(0.9);
             filter: drop-shadow(0 0 0 rgba(59,91,255,0));
           }
           100% {
             opacity: 1;
-            transform: scale(1) translateY(0);
-            filter: drop-shadow(0 18px 38px rgba(59,91,255,0.22));
+            transform: translateY(0) scale(1);
+            filter: drop-shadow(0 20px 40px rgba(59,91,255,0.25));
           }
         }
 
-        @keyframes heroFloat {
+        @keyframes heroFloatGlow {
           0%, 100% {
-            transform: translateY(0);
-            filter: drop-shadow(0 18px 38px rgba(59,91,255,0.20));
+            transform: translateY(0) scale(1);
+            filter: drop-shadow(0 20px 40px rgba(59,91,255,0.25));
           }
           50% {
-            transform: translateY(-8px);
-            filter: drop-shadow(0 22px 48px rgba(59,91,255,0.34));
+            transform: translateY(-12px) scale(1.02);
+            filter: drop-shadow(0 35px 55px rgba(59,91,255,0.45));
           }
         }
 
         .workflow-line-container {
           position: absolute;
-          top: 26px;
-          left: 8%;
-          right: 8%;
+          top: 23px;
+          left: 10%;
+          right: 10%;
           height: 2px;
           background-color: #cbd5e1;
           z-index: 0;
@@ -84,7 +93,7 @@ const LandingPage = () => {
           width: 0%;
           background: linear-gradient(90deg, #3B5BFF, #22A652);
           box-shadow: 0 0 12px rgba(59,91,255,0.45);
-          transition: width 2s cubic-bezier(0.4, 0, 0.2, 1);
+          transition: width 2s linear;
         }
 
         .workflow-line-glow.animate {
@@ -99,97 +108,87 @@ const LandingPage = () => {
           50% {
             border-color: currentColor;
             box-shadow: 0 0 18px currentColor;
-            transform: scale(1.1);
+            transform: scale(1.15);
           }
           100% {
-            border-color: #f1f5f9;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            border-color: currentColor;
+            box-shadow: 0 0 10px currentColor;
             transform: scale(1);
           }
         }
 
-        .animate-step-glow-1 { animation: pulseGlowIcon 0.6s ease-out 0s forwards; }
-        .animate-step-glow-2 { animation: pulseGlowIcon 0.6s ease-out 0.45s forwards; }
-        .animate-step-glow-3 { animation: pulseGlowIcon 0.6s ease-out 0.9s forwards; }
-        .animate-step-glow-4 { animation: pulseGlowIcon 0.6s ease-out 1.35s forwards; }
-        .animate-step-glow-5 { animation: pulseGlowIcon 0.6s ease-out 1.8s forwards; }
+        .animate-step-glow-1 { animation: pulseGlowIcon 0.5s ease-out 0s forwards; }
+        .animate-step-glow-2 { animation: pulseGlowIcon 0.5s ease-out 0.5s forwards; }
+        .animate-step-glow-3 { animation: pulseGlowIcon 0.5s ease-out 1.0s forwards; }
+        .animate-step-glow-4 { animation: pulseGlowIcon 0.5s ease-out 1.5s forwards; }
+        .animate-step-glow-5 { animation: pulseGlowIcon 0.5s ease-out 2.0s forwards; }
       `}</style>
 
       {/* MAIN CONTENT */}
-      <main className="relative z-10 flex flex-col items-center justify-start w-full min-h-screen max-w-[1700px] mx-auto px-6 lg:px-10 pt-8 pb-12 animate-in fade-in duration-1000">
+      <main className="relative z-10 flex flex-col items-center justify-start w-full min-h-screen max-w-[1700px] mx-auto px-6 lg:px-10 pt-4 pb-6 animate-in fade-in duration-1000">
 
         {/* BRANDING */}
-        <section className="flex flex-col items-center text-center w-full mb-[32px]">
-          <div className="w-full flex justify-center mb-7">
+        <section className="flex flex-col items-center text-center w-full mb-[12px]">
+          <div className="w-full flex justify-center mb-3">
             <img
               src={logo}
               alt="JanVaani AI Logo"
-              className="h-[170px] sm:h-[235px] md:h-[275px] lg:h-[300px] w-auto max-w-[85vw] object-contain animate-hero-logo-proper"
+              className="h-[230px] sm:h-[220px] md:h-[250px] lg:h-[280px] w-auto max-w-[85vw] object-contain animate-hero-logo-proper"
             />
           </div>
 
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tight uppercase mb-3">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tight uppercase mb-2">
             JanVaani <span className="text-[#3B5BFF]">AI</span>
           </h1>
 
-          <h2 className="text-sm sm:text-base md:text-lg font-bold tracking-tight mb-3 flex justify-center gap-2 whitespace-nowrap">
+          <h2 className="text-base sm:text-lg md:text-xl font-bold tracking-tight mb-2 flex justify-center gap-2 whitespace-nowrap">
             <span className="text-[#FF8A00]">For the People,</span>
             <span className="text-[#3B5BFF]">By the People,</span>
             <span className="text-[#22A652]">Of the People</span>
           </h2>
 
-          <p className="text-xs md:text-sm font-bold text-[#111827] mb-2">
+          <p className="text-sm md:text-base font-bold text-[#111827] mb-1">
             AI-powered Constituency Development Platform
           </p>
 
-          <p className="text-[#6B7280] text-xs md:text-sm max-w-xl font-medium leading-relaxed">
+          <p className="text-[#6B7280] text-sm md:text-base max-w-xl font-medium leading-relaxed">
             Transforming every citizen voice into transparent, data-driven public development.
           </p>
         </section>
 
         {/* CTA BUTTONS */}
-        <section className="flex flex-col items-center w-full max-w-[1200px] mx-auto mt-16">
-          <div className="flex flex-col sm:flex-row gap-12 w-full justify-center px-2 mb-28">
+        <section className="flex flex-col items-center w-full max-w-[1200px] mx-auto mt-3">
+          <div className="flex flex-col sm:flex-row gap-5 w-full justify-center px-2 mb-6">
             <button
-              onClick={() => navigate('/citizen')}
-              className="flex-1 max-w-[420px] h-[86px] group relative bg-[#3B5BFF] hover:bg-[#2563EB] rounded-[24px] overflow-hidden shadow-xl hover:shadow-[0_22px_55px_rgba(59,91,255,0.45)] transition-all duration-300 hover:-translate-y-1.5 flex items-center justify-center gap-6"
+              onClick={handleCitizenStart}
+              className="flex-1 max-w-[300px] h-[72px] group relative bg-[#3B5BFF] hover:bg-[#2563EB] rounded-[22px] overflow-hidden shadow-xl hover:shadow-[0_22px_55px_rgba(59,91,255,0.45)] transition-all duration-300 hover:-translate-y-1 flex items-center justify-center gap-4"
             >
-              <div className="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                <Mic size={28} className="text-white" />
+              <div className="w-[42px] h-[42px] rounded-full bg-white/20 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                <Mic size={20} className="text-white" />
               </div>
-
               <div className="flex flex-col items-start">
-                <span className="text-2xl font-bold text-white tracking-wide leading-tight">
-                  Start as Citizen
-                </span>
-                <span className="text-[14px] font-medium text-blue-100 mt-1">
-                  Speak. Report. Improve India.
-                </span>
+                <span className="text-[18px] font-bold text-white leading-tight">Start as Citizen</span>
+                <span className="text-[12px] text-white/80 font-medium mt-0.5">Speak. Report. Improve India.</span>
               </div>
             </button>
 
             <button
               onClick={() => navigate('/mp-login')}
-              className="flex-1 max-w-[420px] h-[86px] group relative bg-white border-2 border-slate-200 rounded-[24px] overflow-hidden shadow-md hover:shadow-[0_22px_55px_rgba(15,23,42,0.12)] hover:border-[#3B5BFF]/30 transition-all duration-300 hover:-translate-y-1.5 flex items-center justify-center gap-6"
+              className="flex-1 max-w-[300px] h-[72px] group relative bg-white border-2 border-slate-200 rounded-[22px] overflow-hidden shadow-md hover:shadow-[0_22px_55px_rgba(15,23,42,0.12)] hover:border-[#3B5BFF]/30 transition-all duration-300 hover:-translate-y-1 flex items-center justify-center gap-4"
             >
-              <div className="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                <LayoutDashboard size={28} className="text-[#111827]" />
+              <div className="w-[42px] h-[42px] rounded-full bg-slate-100 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                <LayoutDashboard size={20} className="text-[#111827]" />
               </div>
-
               <div className="flex flex-col items-start">
-                <span className="text-2xl font-bold text-[#111827] tracking-wide leading-tight">
-                  MP Dashboard
-                </span>
-                <span className="text-[14px] font-medium text-slate-500 mt-1">
-                  Official AI Decision Engine
-                </span>
+                <span className="text-[18px] font-bold text-[#111827] leading-tight">MP Dashboard</span>
+                <span className="text-[12px] text-slate-500 font-medium mt-0.5">Official AI Decision Engine</span>
               </div>
             </button>
           </div>
         </section>
 
         {/* WORKFLOW */}
-        <div className="w-full hidden md:block mb-24 max-w-[1200px]">
+        <div className="w-full hidden md:block mb-4 max-w-[1200px]">
           <div className="flex items-start justify-between relative px-4 text-center">
             <div className="workflow-line-container">
               <div className={`workflow-line-glow ${animationStarted ? 'animate' : ''}`} />
@@ -198,31 +197,31 @@ const LandingPage = () => {
             {[
               {
                 title: 'Citizen Voice',
-                icon: <Mic size={22} className="text-[#FF8A00]" />,
+                icon: <Mic size={20} className="text-[#FF8A00]" />,
                 color: 'text-[#FF8A00]',
                 glow: 'animate-step-glow-1',
               },
               {
                 title: 'AI Understanding',
-                icon: <BrainCircuit size={22} className="text-[#3B5BFF]" />,
+                icon: <BrainCircuit size={20} className="text-[#3B5BFF]" />,
                 color: 'text-[#3B5BFF]',
                 glow: 'animate-step-glow-2',
               },
               {
                 title: 'Priority Intelligence',
-                icon: <ActivitySquare size={22} className="text-[#3B5BFF]" />,
+                icon: <ActivitySquare size={20} className="text-[#3B5BFF]" />,
                 color: 'text-[#3B5BFF]',
                 glow: 'animate-step-glow-3',
               },
               {
                 title: 'Government Action',
-                icon: <Landmark size={22} className="text-[#22A652]" />,
+                icon: <Landmark size={20} className="text-[#22A652]" />,
                 color: 'text-[#22A652]',
                 glow: 'animate-step-glow-4',
               },
               {
                 title: 'Public Impact',
-                icon: <Users size={22} className="text-[#22A652]" />,
+                icon: <Users size={20} className="text-[#22A652]" />,
                 color: 'text-[#22A652]',
                 glow: 'animate-step-glow-5',
               },
@@ -232,12 +231,12 @@ const LandingPage = () => {
                 className={`relative z-10 flex flex-col items-center flex-1 px-2 ${step.color}`}
               >
                 <div
-                  className={`w-14 h-14 rounded-full bg-white border-2 border-slate-100 shadow-sm flex items-center justify-center bg-clip-padding ${animationStarted ? step.glow : ''
+                  className={`w-12 h-12 rounded-full bg-white border-2 border-slate-100 shadow-sm flex items-center justify-center bg-clip-padding ${animationStarted ? step.glow : ''
                     }`}
                 >
                   {step.icon}
                 </div>
-                <h4 className="font-bold text-[#111827] text-[14px] mt-4 leading-tight">
+                <h4 className="font-bold text-[#111827] text-[13px] mt-3 leading-tight">
                   {step.title}
                 </h4>
               </div>
@@ -246,7 +245,7 @@ const LandingPage = () => {
         </div>
 
         {/* FEATURE CARDS */}
-        <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-12 w-full px-4 max-w-[1500px] relative z-20 mt-8">
+        <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8 w-full px-4 max-w-[1500px] relative z-20 mt-10">
           {[
             {
               title: 'Speak Naturally',
@@ -279,10 +278,10 @@ const LandingPage = () => {
           ].map((card, index) => (
             <div
               key={index}
-              className="group bg-white/95 backdrop-blur-sm px-7 py-6 min-h-[125px] rounded-[22px] shadow-[0_10px_30px_rgba(15,23,42,0.08)] hover:shadow-[0_18px_42px_rgba(15,23,42,0.14)] border border-white/80 flex items-center gap-5 hover:-translate-y-1.5 transition-all duration-300"
+              className="group bg-white/95 backdrop-blur-sm px-5 py-4 min-h-[95px] rounded-[16px] shadow-[0_8px_24px_rgba(15,23,42,0.06)] hover:shadow-[0_12px_32px_rgba(15,23,42,0.1)] border border-white/80 flex items-center gap-4 hover:-translate-y-1 transition-all duration-300"
             >
               <div
-                className={`w-14 h-14 rounded-2xl ${card.bg} ${card.text} flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform duration-300`}
+                className={`w-12 h-12 rounded-xl ${card.bg} ${card.text} flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform duration-300`}
               >
                 {card.icon}
               </div>
@@ -291,7 +290,7 @@ const LandingPage = () => {
                 <h3 className="font-bold text-[#111827] text-[16px] mb-1 leading-tight">
                   {card.title}
                 </h3>
-                <p className="text-slate-500 text-[13px] font-medium leading-[1.4] line-clamp-2">
+                <p className="text-slate-500 text-[11.5px] font-medium leading-[1.3] line-clamp-2">
                   {card.desc}
                 </p>
               </div>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { ArrowLeft, CheckCircle2, Globe, AlertCircle, MapPin, Languages, FileText, Users, Image as ImageIcon, Percent, Edit3, Rocket } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import logo from '../assets/logo.svg';
 
 const CallCompleted = () => {
   const navigate = useNavigate();
@@ -11,23 +12,26 @@ const CallCompleted = () => {
       <header className="bg-white/80 backdrop-blur-md border-b border-slate-200/50 sticky top-0 z-50">
         <div className="max-w-4xl xl:max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
           <button 
-            onClick={() => navigate('/')}
+            onClick={() => navigate(-1)}
             className="w-10 h-10 flex items-center justify-center rounded-full bg-slate-50 text-slate-600 hover:bg-slate-100 transition-colors shadow-sm"
           >
             <ArrowLeft size={20} />
           </button>
           
           <div className="flex flex-col items-center">
-            <span className="font-bold text-base text-slate-900 tracking-tight">JanVaani AI</span>
+            <div className="flex items-center gap-2">
+              <img src={logo} alt="JanVaani AI Logo" className="h-5 w-auto" />
+              <span className="font-bold text-base text-slate-900 tracking-tight">JanVaani AI</span>
+            </div>
             <div className="flex items-center gap-1.5 mt-0.5">
               <div className="w-1.5 h-1.5 rounded-full bg-slate-400"></div>
-              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">कॉल समाप्त (Ended)</span>
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Call Ended</span>
             </div>
           </div>
           
           <div className="flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-full border border-slate-200 shadow-sm">
             <Globe size={14} className="text-slate-500" />
-            <span className="text-xs font-bold text-slate-700">हिन्दी (Hindi)</span>
+            <span className="text-xs font-bold text-slate-700">English</span>
           </div>
         </div>
       </header>
@@ -40,10 +44,10 @@ const CallCompleted = () => {
             <CheckCircle2 size={48} className="text-green-500" strokeWidth={2.5} />
           </div>
           <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mb-4 leading-tight">
-            कॉल सफलतापूर्वक समाप्त हुई
+            Call Completed Successfully
           </h1>
           <p className="text-lg text-slate-500 font-medium max-w-md mx-auto leading-relaxed">
-            धन्यवाद। हमने आपकी बात समझ ली है। कृपया नीचे दी गई जानकारी की समीक्षा करें।
+            Thank you. We have understood your concern. Please review the extracted information below.
           </p>
         </section>
 
@@ -52,7 +56,7 @@ const CallCompleted = () => {
           <div className="bg-white rounded-[2rem] p-8 sm:p-10 border border-slate-200 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden">
             
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 border-b border-slate-100 pb-6">
-              <h2 className="text-2xl font-bold text-slate-900">शिकायत का विवरण</h2>
+              <h2 className="text-2xl font-bold text-slate-900">Complaint Details</h2>
               <span className="bg-blue-50 text-blue-700 text-sm font-bold px-4 py-1.5 rounded-full border border-blue-100 flex items-center gap-2">
                 <CheckCircle2 size={16} /> AI Extracted
               </span>
@@ -66,8 +70,8 @@ const CallCompleted = () => {
                   <AlertCircle size={20} className="text-slate-600" />
                 </div>
                 <div>
-                  <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">समस्या श्रेणी</p>
-                  <p className="text-lg font-bold text-slate-900">जल आपूर्ति (Water Supply)</p>
+                  <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">Category</p>
+                  <p className="text-lg font-bold text-slate-900">Water Supply</p>
                 </div>
               </div>
 
@@ -77,8 +81,8 @@ const CallCompleted = () => {
                   <MapPin size={20} className="text-slate-600" />
                 </div>
                 <div>
-                  <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">प्रभावित क्षेत्र</p>
-                  <p className="text-lg font-bold text-slate-900">रामपुरा (Rampura)</p>
+                  <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">Location</p>
+                  <p className="text-lg font-bold text-slate-900">Rampura</p>
                 </div>
               </div>
 
@@ -88,8 +92,8 @@ const CallCompleted = () => {
                   <Languages size={20} className="text-slate-600" />
                 </div>
                 <div>
-                  <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">भाषा</p>
-                  <p className="text-lg font-bold text-slate-900">हिन्दी (Hindi)</p>
+                  <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">Language</p>
+                  <p className="text-lg font-bold text-slate-900">English</p>
                 </div>
               </div>
 
@@ -99,8 +103,8 @@ const CallCompleted = () => {
                   <Users size={20} className="text-slate-600" />
                 </div>
                 <div>
-                  <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">प्रभावित परिवार</p>
-                  <p className="text-lg font-bold text-slate-900">लगभग 50</p>
+                  <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">Families Affected</p>
+                  <p className="text-lg font-bold text-slate-900">Around 50</p>
                 </div>
               </div>
 
@@ -110,9 +114,9 @@ const CallCompleted = () => {
                   <FileText size={20} className="text-slate-600" />
                 </div>
                 <div className="w-full">
-                  <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-2">संक्षिप्त विवरण (Transcript)</p>
+                  <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-2">Transcript</p>
                   <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 text-slate-700 font-medium leading-relaxed">
-                    "हमारे गाँव रामपुरा में पानी की बहुत कमी है। लगभग 50 परिवार इस समस्या से प्रभावित हैं।"
+                    "There is a severe water shortage in our village Rampura. Around 50 families are affected by this issue."
                   </div>
                 </div>
               </div>
@@ -123,9 +127,9 @@ const CallCompleted = () => {
                   <ImageIcon size={20} className="text-slate-600" />
                 </div>
                 <div>
-                  <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">फोटो प्रमाण</p>
+                  <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">Photo Evidence</p>
                   <button className="text-blue-600 font-bold text-sm bg-blue-50 px-4 py-2 rounded-xl hover:bg-blue-100 transition-colors mt-1">
-                    + फोटो जोड़ें
+                    + Add Photo
                   </button>
                 </div>
               </div>
@@ -148,14 +152,14 @@ const CallCompleted = () => {
         {/* Bottom Buttons */}
         <section className="flex flex-col sm:flex-row gap-5 mb-6">
           <button className="flex-1 bg-white hover:bg-slate-50 text-slate-700 font-bold px-8 py-5 rounded-[1.5rem] border-2 border-slate-200 transition-all flex items-center justify-center gap-3 shadow-sm hover:shadow-md text-lg">
-            <Edit3 size={22} /> विवरण संपादित करें
+            <Edit3 size={22} /> Edit Details
           </button>
           
           <button 
             onClick={() => navigate('/complaint-registered')}
             className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-5 rounded-[1.5rem] shadow-[0_8px_25px_rgb(37,99,235,0.3)] transition-all hover:-translate-y-1 hover:shadow-[0_12px_30px_rgb(37,99,235,0.4)] flex items-center justify-center gap-3 text-lg"
           >
-            <Rocket size={22} /> शिकायत दर्ज करें
+            <Rocket size={22} /> Submit Complaint
           </button>
         </section>
 

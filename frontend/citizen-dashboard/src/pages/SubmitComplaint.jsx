@@ -26,10 +26,10 @@ const SubmitComplaint = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans selection:bg-blue-200 selection:text-blue-900 flex flex-col relative pb-32">
+    <div className="min-h-[100dvh] bg-[#FAFAFA] font-sans selection:bg-blue-100 selection:text-blue-900 flex flex-col relative pb-32">
       
       {/* Header */}
-      <header className="bg-white/90 sticky top-0 z-50 pt-4 pb-3 px-4 backdrop-blur-xl border-b border-slate-200/50 shadow-sm">
+      <header className="bg-white/80 sticky top-0 z-50 pt-4 pb-3 px-4 backdrop-blur-md border-b border-slate-200/50 shadow-sm">
         <div className="max-w-3xl lg:max-w-4xl mx-auto flex items-center justify-between">
           <button 
             onClick={() => navigate('/citizen')}
@@ -162,27 +162,27 @@ const SubmitComplaint = () => {
         </section>
 
         {/* AI Insight Card */}
-        <section className="bg-indigo-50 border border-indigo-100 rounded-3xl p-6 sm:p-8 relative overflow-hidden shadow-sm mt-12">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500 opacity-10 rounded-bl-full pointer-events-none -mt-4 -mr-4"></div>
+        <section className="bg-blue-50 border border-blue-100 rounded-3xl p-6 sm:p-8 relative overflow-hidden shadow-sm mt-12">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500 opacity-10 rounded-bl-full pointer-events-none -mt-4 -mr-4"></div>
           
           <div className="flex items-center gap-3 mb-6 relative z-10">
-            <div className="w-10 h-10 rounded-2xl bg-white flex items-center justify-center shadow-sm text-indigo-600">
+            <div className="w-10 h-10 rounded-2xl bg-white flex items-center justify-center shadow-sm text-blue-600">
               <BrainCircuit size={20} />
             </div>
-            <h3 className="text-lg font-extrabold text-indigo-950 tracking-tight">AI Summary</h3>
+            <h3 className="text-lg font-extrabold text-blue-950 tracking-tight">AI Summary</h3>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 relative z-10">
-            <div className="bg-white rounded-2xl p-4 shadow-sm border border-indigo-50/50 flex flex-col justify-center">
-              <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Category</span>
-              <span className="text-sm font-bold text-indigo-950">{selectedCategory}</span>
+            <div className="bg-white rounded-2xl p-4 shadow-sm border border-blue-50/50 flex flex-col justify-center">
+              <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">Category</span>
+              <span className="text-sm font-bold text-blue-950">{selectedCategory}</span>
             </div>
-            <div className="bg-white rounded-2xl p-4 shadow-sm border border-indigo-50/50 flex flex-col justify-center">
-              <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Language</span>
-              <span className="text-sm font-bold text-indigo-950">Hindi / English</span>
+            <div className="bg-white rounded-2xl p-4 shadow-sm border border-blue-50/50 flex flex-col justify-center">
+              <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">Language</span>
+              <span className="text-sm font-bold text-blue-950">Hindi / English</span>
             </div>
-            <div className="bg-white rounded-2xl p-4 shadow-sm border border-indigo-50/50 flex flex-col justify-center">
-              <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Priority</span>
+            <div className="bg-white rounded-2xl p-4 shadow-sm border border-blue-50/50 flex flex-col justify-center">
+              <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">Priority</span>
               <span className="text-sm font-bold text-red-600">High</span>
             </div>
           </div>

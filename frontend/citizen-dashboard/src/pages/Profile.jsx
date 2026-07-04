@@ -12,7 +12,23 @@ const supportedIssues = [
   { title: "Garbage pile up near school", location: "Gandhi Nagar", status: "Under Review", supporters: 156 }
 ];
 
-const languages = ["English", "Hindi", "Gujarati", "Marathi", "Tamil", "Telugu", "Kannada", "Bengali", "Punjabi", "Other"];
+const languages = [
+  "English",
+  "हिन्दी (Hindi)",
+  "বাংলা (Bengali)",
+  "తెలుగు (Telugu)",
+  "मराठी (Marathi)",
+  "தமிழ் (Tamil)",
+  "ગુજરાતી (Gujarati)",
+  "ಕನ್ನಡ (Kannada)",
+  "മലയാളം (Malayalam)",
+  "ਪੰਜਾਬੀ (Punjabi)",
+  "ଓଡ଼ିଆ (Odia)",
+  "অসমীয়া (Assamese)",
+  "اردو (Urdu)",
+  "संस्कृत (Sanskrit)",
+  "Other (Please Specify)"
+];
 
 const helpContent = {
   "Frequently Asked Questions": "Q: How do I track my complaint?\nA: You can track your complaint using the 'Track Complaint' button on the dashboard or by going to the 'My Complaints' section in your profile.\n\nQ: How long does it take for an issue to be resolved?\nA: Most high-priority issues are reviewed within 48 hours. Resolution time depends on the complexity of the complaint.",
@@ -33,14 +49,23 @@ const Profile = () => {
     weekly: false
   });
 
-  const [userInfo, setUserInfo] = useState({
-    fullName: "Ramesh Chand",
-    mobileNumber: "+91 98765 43210",
-    emailAddress: "ramesh.c@example.com",
-    residentialAddress: "12/A, Gandhi Nagar, Sector 4",
-    constituency: "Ward 12, West Zone",
-    preferredLanguage: "English"
-  });
+  // Read from localStorage or use fallback if not found
+  const getInitialProfile = () => {
+    const saved = localStorage.getItem('janvaani_citizen_profile');
+    if (saved) {
+      return JSON.parse(saved);
+    }
+    return {
+      fullName: "Ramesh Chand",
+      mobileNumber: "+91 98765 43210",
+      emailAddress: "ramesh.c@example.com",
+      residentialAddress: "12/A, Gandhi Nagar, Sector 4",
+      constituency: "Ward 12, West Zone",
+      preferredLanguage: "English"
+    };
+  };
+
+  const [userInfo, setUserInfo] = useState(getInitialProfile());
 
   const [isEditingInfo, setIsEditingInfo] = useState(false);
   const [editForm, setEditForm] = useState({ ...userInfo });
@@ -59,6 +84,10 @@ const Profile = () => {
     setUserInfo({ ...editForm });
     setSelectedLanguage(editForm.preferredLanguage);
     setIsEditingInfo(false);
+    
+    // Save to local storage
+    const currentProfile = JSON.parse(localStorage.getItem('janvaani_citizen_profile') || '{}');
+    localStorage.setItem('janvaani_citizen_profile', JSON.stringify({ ...currentProfile, ...editForm }));
   };
 
   const handleCancelInfo = () => {
@@ -72,6 +101,17 @@ const Profile = () => {
     // If they typed something in "Other", we'll just consider it saved globally
     if (selectedLanguage !== "Other") {
        setEditForm(prev => ({ ...prev, preferredLanguage: finalLang }));
+    }
+    
+    // Save to local storage
+    const currentProfile = JSON.parse(localStorage.getItem('janvaani_citizen_profile') || '{}');
+    localStorage.setItem('janvaani_citizen_profile', JSON.stringify({ ...currentProfile, preferredLanguage: finalLang }));
+  };
+
+  const handleResetRegistration = () => {
+    if (window.confirm("Are you sure you want to reset your registration on this device? All local data will be cleared and you will be logged out.")) {
+      localStorage.removeItem('janvaani_citizen_profile');
+      navigate('/');
     }
   };
 
@@ -127,25 +167,45 @@ const Profile = () => {
         </section>
 
         {/* 2. Government Identity Verification */}
-        <section className="bg-red-50 border border-red-100 rounded-3xl p-6 sm:p-8 shadow-sm">
-          <div className="flex flex-col sm:flex-row gap-6 items-center sm:items-start justify-between text-center sm:text-left">
-            <div>
-              <div className="flex items-center justify-center sm:justify-start gap-2 mb-2">
-                <ShieldAlert size={24} className="text-red-500" />
-                <h2 className="text-lg font-extrabold text-slate-900">Government Identity Verification</h2>
+        {userInfo.govIdType && userInfo.govIdNumber ? (
+          <section className="bg-emerald-50 border border-emerald-100 rounded-3xl p-6 sm:p-8 shadow-sm">
+            <div className="flex flex-col sm:flex-row gap-6 items-center sm:items-start justify-between text-center sm:text-left">
+              <div>
+                <div className="flex items-center justify-center sm:justify-start gap-2 mb-2">
+                  <ShieldAlert size={24} className="text-emerald-500" />
+                  <h2 className="text-lg font-extrabold text-slate-900">Government Identity Verified</h2>
+                </div>
+                <p className="text-sm font-bold text-emerald-600 mb-2">Linked: {userInfo.govIdType}</p>
+                <div className="flex items-center gap-2 mt-2">
+                  <span className="bg-emerald-100 text-emerald-800 font-mono font-bold px-3 py-1 rounded-lg">
+                    {/* Mask ID: Show first 2 and last 4 characters, mask the rest */}
+                    {userInfo.govIdNumber.slice(0, 2)}{'*'.repeat(Math.max(0, userInfo.govIdNumber.length - 6))}{userInfo.govIdNumber.slice(-4)}
+                  </span>
+                </div>
               </div>
-              <p className="text-sm font-bold text-red-600 mb-2">Verification Status: Not Verified</p>
-              <p className="text-slate-600 text-sm max-w-md">Verify your identity using a government-issued document to increase complaint credibility and help authorities process reports more efficiently.</p>
             </div>
-            
-            <button 
-              onClick={() => navigate('/identity-verification')}
-              className="bg-slate-900 hover:bg-slate-800 text-white font-bold px-6 py-3.5 rounded-2xl whitespace-nowrap transition-colors shadow-md w-full sm:w-auto mt-2 sm:mt-0 active:scale-95"
-            >
-              Verify Identity &rarr;
-            </button>
-          </div>
-        </section>
+          </section>
+        ) : (
+          <section className="bg-red-50 border border-red-100 rounded-3xl p-6 sm:p-8 shadow-sm">
+            <div className="flex flex-col sm:flex-row gap-6 items-center sm:items-start justify-between text-center sm:text-left">
+              <div>
+                <div className="flex items-center justify-center sm:justify-start gap-2 mb-2">
+                  <ShieldAlert size={24} className="text-red-500" />
+                  <h2 className="text-lg font-extrabold text-slate-900">Government Identity Verification</h2>
+                </div>
+                <p className="text-sm font-bold text-red-600 mb-2">Verification Status: Not Verified</p>
+                <p className="text-slate-600 text-sm max-w-md">Verify your identity using a government-issued document to increase complaint credibility and help authorities process reports more efficiently.</p>
+              </div>
+              
+              <button 
+                onClick={() => navigate('/identity-verification')}
+                className="bg-slate-900 hover:bg-slate-800 text-white font-bold px-6 py-3.5 rounded-2xl whitespace-nowrap transition-colors shadow-md w-full sm:w-auto mt-2 sm:mt-0 active:scale-95"
+              >
+                Verify Identity &rarr;
+              </button>
+            </div>
+          </section>
+        )}
 
         {/* 3. Personal Information */}
         <section className="bg-white rounded-3xl p-6 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200">
@@ -408,11 +468,15 @@ const Profile = () => {
           </div>
         </section>
 
-        {/* 10. Logout */}
-        <div className="pt-4">
-          <button className="w-full bg-transparent border-2 border-red-500 text-red-600 hover:bg-red-50 active:bg-red-100 font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-2">
-            <LogOut size={20} /> Logout
+        {/* 10. Factory Reset / Logout */}
+        <div className="pt-4 pb-8">
+          <button 
+            onClick={handleResetRegistration}
+            className="w-full bg-transparent border-2 border-red-500 text-red-600 hover:bg-red-50 active:bg-red-100 font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-2"
+          >
+            <LogOut size={20} /> Reset Registration
           </button>
+          <p className="text-center text-xs text-slate-400 mt-3 font-medium">This will clear your local registration profile on this device.</p>
         </div>
 
       </main>

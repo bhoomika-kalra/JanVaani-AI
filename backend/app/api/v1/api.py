@@ -13,3 +13,4 @@ api_router.include_router(workflow.router, prefix="/workflow", tags=["Workflow E
 api_router.include_router(notifications.router, prefix="/notifications", tags=["Notifications"])
 api_router.include_router(reports.router, prefix="/reports", tags=["Reports"])
 api_router.include_router(transparency.router, prefix="/transparency", tags=["Public Transparency"])
+api_router.include_router(reports.router, prefix="/ai/report", tags=["ai-reports"])

@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "default-insecure-secret-key"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     
+    GEMINI_API_KEY: str | None = None
+    
     DATABASE_URL: str = "sqlite:///./janvaani.db"
     
     BACKEND_CORS_ORIGINS: List[str] = ["*"]

@@ -331,7 +331,7 @@ const MPDashboard = () => {
             </button>
           ))}
         </div>
-        
+        <div className="p-4 border-t border-slate-100 space-y-1 bg-slate-50/50 mt-auto">
           <button 
             onClick={() => setActiveNav('Settings')}
             className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${activeNav === 'Settings' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}

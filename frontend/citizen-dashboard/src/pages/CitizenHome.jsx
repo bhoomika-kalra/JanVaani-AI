@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, MapPin, CheckCircle2, ChevronDown, Bell, Zap, Droplets, ShieldAlert, Activity, Filter, Layers, MessageSquare, ThumbsUp, Map, Briefcase, Plus, FileText, ChevronRight, Share2, PlaySquare, Mic } from 'lucide-react';
+import { Search, MapPin, CheckCircle2, ChevronDown, Bell, Zap, Droplets, ShieldAlert, Activity, Filter, Layers, MessageSquare, ThumbsUp, Map, Briefcase, Plus, FileText, ChevronRight, Share2, PlaySquare, Mic, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import logo from '../assets/logo.svg';
 import { citizenService } from '../services/citizenService';

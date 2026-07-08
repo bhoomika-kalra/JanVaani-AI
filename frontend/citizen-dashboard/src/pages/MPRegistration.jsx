@@ -1,10 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BrainCircuit, ShieldCheck, Upload, ArrowRight } from 'lucide-react';
+import logo from '../assets/logo.svg';
 
 const MPRegistration = () => {
   const navigate = useNavigate();
   
+  const [uploadedFile, setUploadedFile] = useState(null);
+  const fileInputRef = useRef(null);
+
   const [formData, setFormData] = useState({
     name: '',
     mobile: '',
@@ -26,6 +30,11 @@ const MPRegistration = () => {
     e.preventDefault();
     if(!formData.name || !formData.constituency) {
       alert("Name and Constituency are required!");
+      return;
+    }
+    
+    if (!uploadedFile) {
+      alert("Please upload your official ID for verification.");
       return;
     }
     
@@ -55,13 +64,11 @@ const MPRegistration = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans selection:bg-blue-200">
+    <div className="min-h-screen bg-[#FAFAFA] flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans selection:bg-blue-200">
       
       <div className="sm:mx-auto sm:w-full sm:max-w-2xl text-center">
-        <div className="mx-auto w-16 h-16 bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl flex items-center justify-center text-white shadow-xl mb-6">
-          <BrainCircuit size={32} />
-        </div>
-        <h2 className="text-3xl font-black text-slate-900 tracking-tight">JanVaani <span className="text-blue-600">AI</span></h2>
+        <img src={logo} alt="JanVaani AI Logo" className="h-[120px] w-auto mx-auto mb-4 drop-shadow-lg" />
+        <h2 className="text-3xl font-black text-slate-900 tracking-tight">JanVaani <span className="text-[#3B5BFF]">AI</span></h2>
         <p className="mt-2 text-sm font-bold text-slate-500 uppercase tracking-widest">Official Registration Portal</p>
       </div>
 
@@ -180,16 +187,27 @@ const MPRegistration = () => {
 
             <div className="mt-8">
               <label className="block text-sm font-bold text-slate-700 mb-3">Upload Official ID (Verification)</label>
-              <div className="mt-1 flex justify-center px-6 pt-10 pb-10 border-2 border-blue-200 border-dashed rounded-2xl bg-blue-50/50 hover:bg-blue-50 transition-colors cursor-pointer group">
+              <input type="file" ref={fileInputRef} className="hidden" accept=".png,.jpg,.jpeg,.pdf" onChange={(e) => {
+                 if (e.target.files && e.target.files[0]) {
+                   setUploadedFile(e.target.files[0].name);
+                 }
+              }} />
+              <div onClick={() => fileInputRef.current?.click()} className="mt-1 flex justify-center px-6 pt-10 pb-10 border-2 border-blue-200 border-dashed rounded-2xl bg-blue-50/50 hover:bg-blue-50 transition-colors cursor-pointer group">
                 <div className="space-y-2 text-center">
                   <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center mx-auto shadow-sm group-hover:scale-110 transition-transform">
                     <Upload className="h-7 w-7 text-blue-500" />
                   </div>
                   <div className="flex flex-col text-sm text-slate-600 justify-center mt-4">
-                    <span className="relative rounded-md font-bold text-blue-700 focus-within:outline-none text-base">
-                      Click to upload a file
-                    </span>
-                    <p className="mt-1">or drag and drop your document here</p>
+                    {uploadedFile ? (
+                       <span className="relative rounded-md font-bold text-green-600 focus-within:outline-none text-base">
+                         {uploadedFile}
+                       </span>
+                    ) : (
+                       <span className="relative rounded-md font-bold text-blue-700 focus-within:outline-none text-base">
+                         Click to upload a file
+                       </span>
+                    )}
+                    <p className="mt-1">{uploadedFile ? 'Click to change file' : 'or drag and drop your document here'}</p>
                   </div>
                   <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-2">PNG, JPG, PDF up to 10MB</p>
                 </div>

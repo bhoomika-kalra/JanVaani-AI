@@ -16,6 +16,20 @@ const TrackComplaint = () => {
     }
   };
 
+  const now = new Date();
+  const formatTime = (date) => date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  
+  const submittedTime = formatTime(new Date(now.getTime() - 25 * 60000));
+  const reviewTime = formatTime(now);
+
+  const [feedbackSent, setFeedbackSent] = useState(false);
+  
+  const handleMockSmsReply = async (replyCode) => {
+    // In a real app, this would call /api/v1/notifications/sms/mock-reply
+    alert(`Mock SMS Reply ${replyCode} sent to server.`);
+    setFeedbackSent(true);
+  };
+
   return (
     <div className="min-h-[100dvh] bg-[#FAFAFA] font-sans selection:bg-blue-100 selection:text-blue-900 flex flex-col relative pb-[120px]">
       
@@ -52,20 +66,17 @@ const TrackComplaint = () => {
             Water Supply Complaint
           </h1>
 
-          <div className="bg-orange-50 border border-orange-200 px-5 py-2 rounded-full flex items-center gap-2 mb-6">
-            <div className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-orange-500"></span>
-            </div>
-            <span className="text-[11px] font-bold text-orange-700 uppercase tracking-widest">Under Review</span>
+          <div className="bg-green-50 border border-green-200 px-5 py-2 rounded-full flex items-center gap-2 mb-6">
+            <CheckCircle2 size={16} className="text-green-600" />
+            <span className="text-[11px] font-bold text-green-700 uppercase tracking-widest">Completed</span>
           </div>
 
           <p className="text-slate-500 font-medium mb-8 leading-relaxed max-w-sm text-sm">
-            The concerned department is currently reviewing your complaint details.
+            The concerned department has completed the required work for this complaint.
           </p>
 
           <div className="w-full max-w-sm bg-slate-100 rounded-full h-2 overflow-hidden">
-            <div className="bg-blue-500 h-full rounded-full w-1/3"></div>
+            <div className="bg-green-500 h-full rounded-full w-full"></div>
           </div>
         </section>
 
@@ -87,7 +98,7 @@ const TrackComplaint = () => {
               <div className="pt-2.5">
                 <p className="text-[15px] font-bold text-slate-900">Complaint Submitted</p>
                 <div className="flex items-center gap-2 mt-1">
-                  <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Today • 10:45 AM</span>
+                  <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Today • {submittedTime}</span>
                 </div>
                 <p className="text-sm text-slate-500 mt-2 font-medium">
                   Successfully registered on portal.
@@ -105,7 +116,7 @@ const TrackComplaint = () => {
               <div className="pt-2.5">
                 <p className="text-[15px] font-bold text-slate-900">Under Review</p>
                 <div className="flex items-center gap-2 mt-1">
-                  <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Today • 11:10 AM</span>
+                  <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Today • {reviewTime}</span>
                 </div>
                 <p className="text-sm text-slate-500 mt-2 font-medium">
                   Assigned to local nodal officer.
@@ -230,7 +241,63 @@ const TrackComplaint = () => {
           </div>
         </section>
 
-
+        {/* 6. SMS Updates Section */}
+        <section className="bg-white rounded-[24px] p-6 sm:p-8 shadow-sm border border-slate-200">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-sm font-bold text-slate-900 tracking-wide">SMS Updates</h3>
+            <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">Log</span>
+          </div>
+          
+          <div className="space-y-4">
+            {/* Dummy Log 1 */}
+            <div className="bg-slate-50 border border-slate-100 rounded-xl p-4">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-xs font-bold text-slate-700">Complaint Registered</span>
+                <span className="text-[10px] text-green-600 font-bold flex items-center gap-1"><CheckCircle2 size={12}/> Sent</span>
+              </div>
+              <p className="text-xs text-slate-500 italic">"JanVaani AI: Your complaint has been registered successfully. Complaint ID: JV-2026-001245..."</p>
+              <p className="text-[10px] text-slate-400 mt-2">{submittedTime}</p>
+            </div>
+            
+            {/* Dummy Log 2 */}
+            <div className="bg-slate-50 border border-slate-100 rounded-xl p-4">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-xs font-bold text-slate-700">Under Review</span>
+                <span className="text-[10px] text-green-600 font-bold flex items-center gap-1"><CheckCircle2 size={12}/> Sent</span>
+              </div>
+              <p className="text-xs text-slate-500 italic">"JanVaani AI: Your complaint JV-2026-001245 is now under review by the concerned authority."</p>
+              <p className="text-[10px] text-slate-400 mt-2">{reviewTime}</p>
+            </div>
+            
+            {/* Dummy Log 3 (Completed) */}
+            <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-xs font-bold text-blue-800">Completed</span>
+                <span className="text-[10px] text-green-600 font-bold flex items-center gap-1"><CheckCircle2 size={12}/> Delivered</span>
+              </div>
+              <p className="text-xs text-blue-700 italic font-medium mb-3">
+                "JanVaani AI: Your complaint JV-2026-001245 has been marked completed.<br/>
+                Are you satisfied?<br/>
+                Reply 1 Yes, 2 Partially, 3 No."
+              </p>
+              
+              {!feedbackSent ? (
+                <div className="border-t border-blue-200 pt-3 mt-3">
+                  <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wider mb-2">Demo: Send Mock SMS Reply</p>
+                  <div className="flex gap-2">
+                    <button onClick={() => handleMockSmsReply('1')} className="flex-1 bg-white border border-blue-200 text-blue-700 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-colors py-1.5 rounded-lg text-xs font-bold">1 Yes</button>
+                    <button onClick={() => handleMockSmsReply('2')} className="flex-1 bg-white border border-blue-200 text-blue-700 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-colors py-1.5 rounded-lg text-xs font-bold">2 Partially</button>
+                    <button onClick={() => handleMockSmsReply('3')} className="flex-1 bg-white border border-blue-200 text-blue-700 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-colors py-1.5 rounded-lg text-xs font-bold">3 No</button>
+                  </div>
+                </div>
+              ) : (
+                <div className="border-t border-blue-200 pt-3 mt-3">
+                  <p className="text-xs font-bold text-green-600 flex items-center gap-1"><CheckCircle2 size={14}/> Feedback Received via SMS</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
 
       </main>
 

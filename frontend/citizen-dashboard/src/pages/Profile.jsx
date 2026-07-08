@@ -68,6 +68,7 @@ const Profile = () => {
   const [userInfo, setUserInfo] = useState(getInitialProfile());
 
   const [isEditingInfo, setIsEditingInfo] = useState(false);
+  const [isEditingLanguage, setIsEditingLanguage] = useState(false);
   const [editForm, setEditForm] = useState({ ...userInfo });
 
   const [selectedLanguage, setSelectedLanguage] = useState(userInfo.preferredLanguage);
@@ -106,6 +107,7 @@ const Profile = () => {
     // Save to local storage
     const currentProfile = JSON.parse(localStorage.getItem('janvaani_citizen_profile') || '{}');
     localStorage.setItem('janvaani_citizen_profile', JSON.stringify({ ...currentProfile, preferredLanguage: finalLang }));
+    setIsEditingLanguage(false);
   };
 
   const handleResetRegistration = () => {
@@ -407,45 +409,71 @@ const Profile = () => {
               <Globe size={20} className="text-slate-400" />
               <h2 className="text-lg font-extrabold text-slate-900">Language Preferences</h2>
             </div>
+            {!isEditingLanguage && (
+              <button 
+                onClick={() => setIsEditingLanguage(true)}
+                className="flex items-center gap-2 text-sm font-bold text-blue-600 hover:text-blue-700 bg-blue-50 px-4 py-2 rounded-xl transition-colors"
+              >
+                <Edit3 size={16} /> Edit
+              </button>
+            )}
           </div>
           
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
-            {languages.map(lang => (
-              <button 
-                key={lang}
-                onClick={() => setSelectedLanguage(lang)}
-                className={`py-3 px-4 rounded-2xl text-sm font-bold border transition-all ${
-                  selectedLanguage === lang 
-                    ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-sm' 
-                    : 'border-slate-100 bg-slate-50 text-slate-600 hover:border-slate-200 hover:bg-slate-100'
-                }`}
-              >
-                {lang}
-              </button>
-            ))}
-          </div>
-
-          {selectedLanguage === "Other" && (
-            <div className="mb-6 animate-in fade-in slide-in-from-top-2">
-              <label className="block text-sm font-bold text-slate-800 mb-2">Enter your preferred language</label>
-              <input 
-                type="text" 
-                value={customLanguage} 
-                onChange={(e) => setCustomLanguage(e.target.value)}
-                placeholder="Type language here..."
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold outline-none focus:border-blue-500"
-              />
+          {!isEditingLanguage ? (
+            <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
+              <span className="text-sm font-bold text-slate-800">Current Language:</span>
+              <span className="text-base font-black text-blue-700">{userInfo.preferredLanguage}</span>
             </div>
-          )}
+          ) : (
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
+                {languages.map(lang => (
+                  <button 
+                    key={lang}
+                    onClick={() => setSelectedLanguage(lang)}
+                    className={`py-3 px-4 rounded-2xl text-sm font-bold border transition-all ${
+                      selectedLanguage === lang 
+                        ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-sm' 
+                        : 'border-slate-100 bg-slate-50 text-slate-600 hover:border-slate-200 hover:bg-slate-100'
+                    }`}
+                  >
+                    {lang}
+                  </button>
+                ))}
+              </div>
 
-          <div className="border-t border-slate-100 pt-4 flex justify-end">
-            <button 
-              onClick={handleSaveLanguage}
-              className="bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 px-6 rounded-xl transition-colors shadow-md active:scale-95 text-sm"
-            >
-              Save Language
-            </button>
-          </div>
+              {selectedLanguage === "Other" && (
+                <div className="mb-6 animate-in fade-in slide-in-from-top-2">
+                  <label className="block text-sm font-bold text-slate-800 mb-2">Enter your preferred language</label>
+                  <input 
+                    type="text" 
+                    value={customLanguage} 
+                    onChange={(e) => setCustomLanguage(e.target.value)}
+                    placeholder="Type language here..."
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold outline-none focus:border-blue-500"
+                  />
+                </div>
+              )}
+
+              <div className="border-t border-slate-100 pt-4 flex justify-end gap-3">
+                <button 
+                  onClick={() => {
+                    setIsEditingLanguage(false);
+                    setSelectedLanguage(userInfo.preferredLanguage);
+                  }}
+                  className="bg-white hover:bg-slate-50 border border-slate-200 text-slate-600 font-bold py-3 px-6 rounded-xl transition-colors shadow-sm active:scale-95 text-sm"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={handleSaveLanguage}
+                  className="bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 px-6 rounded-xl transition-colors shadow-md active:scale-95 text-sm"
+                >
+                  Save Language
+                </button>
+              </div>
+            </>
+          )}
         </section>
 
         {/* 9. Help & Support */}

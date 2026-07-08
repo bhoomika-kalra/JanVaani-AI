@@ -146,18 +146,22 @@ const EmergencyAlerts = () => {
                     </div>
                  </div>
                  
-                 <div className={`text-slate-600 font-medium text-sm md:text-base mb-6 transition-all ${expandedAlert === alert.id ? 'block' : 'line-clamp-2'}`}>
-                    {alert.description}
-                 </div>
-                 
-                 <div className="flex flex-col sm:flex-row sm:items-center gap-4 text-xs font-bold text-slate-500 pt-5 border-t border-slate-100">
-                    <div className="bg-slate-50 px-3 py-2 rounded-lg flex items-center gap-2">
-                      <MapPin size={16} className="text-slate-400" /> Location: {alert.location}
-                    </div>
-                    <div className="bg-slate-50 px-3 py-2 rounded-lg flex items-center gap-2">
-                      <Clock size={16} className="text-slate-400" /> {alert.date}
-                    </div>
-                 </div>
+                 {expandedAlert === alert.id && (
+                   <div className="animate-in slide-in-from-top-2 fade-in duration-200">
+                     <div className="text-slate-600 font-medium text-sm md:text-base mb-6 mt-4">
+                        {alert.description}
+                     </div>
+                     
+                     <div className="flex flex-col sm:flex-row sm:items-center gap-4 text-xs font-bold text-slate-500 pt-5 border-t border-slate-100">
+                        <div className="bg-slate-50 px-3 py-2 rounded-lg flex items-center gap-2">
+                          <MapPin size={16} className="text-slate-400" /> Location: {alert.location}
+                        </div>
+                        <div className="bg-slate-50 px-3 py-2 rounded-lg flex items-center gap-2">
+                          <Clock size={16} className="text-slate-400" /> {alert.date}
+                        </div>
+                     </div>
+                   </div>
+                 )}
               </div>
             ))
           )}

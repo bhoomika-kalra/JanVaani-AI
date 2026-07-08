@@ -7,6 +7,10 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import logo from '../assets/logo.svg';
+import MapWrapper from '../components/maps/MapWrapper';
+import ComplaintMarker from '../components/maps/ComplaintMarker';
+import UserLocationMarker from '../components/maps/UserLocationMarker';
+import { getCitizenLocation, getNearbyCommunityIssues } from '../services/mapService';
 
 const CitizenHome = () => {
   const navigate = useNavigate();
@@ -14,8 +18,27 @@ const CitizenHome = () => {
   // Location State
   const [userLocation, setUserLocation] = useState('Udaipur');
   const [userState, setUserState] = useState('Rajasthan');
+  const [showLocationPermission, setShowLocationPermission] = useState(true);
+  const [mapLocation, setMapLocation] = useState([25.18, 75.83]);
+  const [nearbyIssues, setNearbyIssues] = useState([]);
+
+  useEffect(() => {
+    const fetchMapData = async () => {
+      const location = await getCitizenLocation();
+      setMapLocation(location);
+      const issues = await getNearbyCommunityIssues(location);
+      setNearbyIssues(issues);
+    };
+    fetchMapData();
+  }, []);
+
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
   const [tempLocation, setTempLocation] = useState({ state: '', city: '', pincode: '' });
+  const [isDetectingLocation, setIsDetectingLocation] = useState(false);
+  
+  const [toastMsg, setToastMsg] = useState('');
+  const [showToast, setShowToast] = useState(false);
+  const [showMapModal, setShowMapModal] = useState(false);
 
   useEffect(() => {
     // Read from localStorage
@@ -45,17 +68,52 @@ const CitizenHome = () => {
   };
 
   const handleUseCurrentLocation = () => {
-    setUserLocation("Current Location");
-    setUserState("");
-    setIsLocationModalOpen(false);
+    setIsDetectingLocation(true);
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          try {
+            const { latitude, longitude } = position.coords;
+            // Use free reverse geocoding API
+            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+            const data = await res.json();
+            
+            const city = data.address.city || data.address.town || data.address.village || data.address.county || "Unknown City";
+            const state = data.address.state || "Unknown State";
+            
+            setTempLocation({ state: state, city: city, pincode: data.address.postcode || '' });
+            setIsDetectingLocation(false);
+          } catch (error) {
+            console.error("Error fetching location details", error);
+            setToastMsg("Could not detect exact city. Please enter manually.");
+            setShowToast(true);
+            setTimeout(() => setShowToast(false), 3000);
+            setIsDetectingLocation(false);
+          }
+        },
+        (error) => {
+          console.error("Geolocation error:", error);
+          setToastMsg("Location access denied or unavailable.");
+          setShowToast(true);
+          setTimeout(() => setShowToast(false), 3000);
+          setIsDetectingLocation(false);
+        },
+        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+      );
+    } else {
+      setToastMsg("Geolocation is not supported by your browser.");
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+      setIsDetectingLocation(false);
+    }
   };
 
-  const communityIssues = [
+  const [issuesState, setIssuesState] = useState([
     {
       id: 1,
       title: "Severe Waterlogging on Main Road",
       location: userLocation,
-      category: "Drainage",
+      category: "Water",
       icon: <Droplets size={16} className="text-white" />,
       iconBg: "bg-blue-500",
       image: "https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?w=500&q=80",
@@ -63,7 +121,8 @@ const CitizenHome = () => {
       status: "IN PROGRESS",
       statusColor: "text-blue-600 bg-white",
       aiPriority: 88,
-      distance: "0.8 km"
+      distance: "0.8 km",
+      isSupported: false
     },
     {
       id: 2,
@@ -77,7 +136,8 @@ const CitizenHome = () => {
       status: "ASSIGNED",
       statusColor: "text-orange-500 bg-white",
       aiPriority: 95,
-      distance: "1.2 km"
+      distance: "1.2 km",
+      isSupported: false
     },
     {
       id: 3,
@@ -91,9 +151,24 @@ const CitizenHome = () => {
       status: "OPEN",
       statusColor: "text-red-500 bg-white",
       aiPriority: 85,
-      distance: "2.5 km"
+      distance: "2.5 km",
+      isSupported: false
     },
-  ];
+  ]);
+
+  const handleSupport = (id) => {
+    setIssuesState(prev => prev.map(issue => {
+      if (issue.id === id) {
+        if (!issue.isSupported) {
+          setShowToast(true);
+          setToastMsg("Thanks for your support! Upvote registered.");
+          setTimeout(() => setShowToast(false), 3000);
+          return { ...issue, support: issue.support + 1, isSupported: true };
+        }
+      }
+      return issue;
+    }));
+  };
 
   const categories = [
     { name: "All", icon: null },
@@ -110,8 +185,18 @@ const CitizenHome = () => {
     { id: 3, title: "Street lights installed", date: "1 day ago", dept: "Power Board", status: "COMPLETED", color: "blue" },
   ];
 
+  const filteredIssues = activeCategory === 'All' ? issuesState : issuesState.filter(issue => issue.category === activeCategory);
+
   return (
-    <div className="min-h-screen bg-[#FAFAFA] font-sans text-slate-800 selection:bg-blue-100 selection:text-blue-900 pb-16 flex justify-center">
+    <div className="min-h-screen bg-[#FAFAFA] font-sans text-slate-800 selection:bg-blue-100 selection:text-blue-900 pb-16 flex justify-center relative">
+      
+      {/* Toast Notification */}
+      {showToast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] bg-slate-900 text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-5">
+          <CheckCircle2 size={18} className="text-green-400" />
+          <span className="font-semibold text-sm">{toastMsg}</span>
+        </div>
+      )}
 
       <div className="w-full max-w-[1700px] bg-[#FAFAFA] min-h-screen shadow-sm flex flex-col">
 
@@ -161,7 +246,7 @@ const CitizenHome = () => {
                 </p>
               </div>
 
-              <div className="xl:w-2/3 grid grid-cols-2 md:grid-cols-4 gap-4 w-full">
+              <div className="xl:w-2/3 grid grid-cols-2 md:grid-cols-5 gap-4 w-full">
 
                 {/* Action Card 1: Speak to AI */}
                 <div onClick={() => navigate('/voice-assistant')} className="bg-white border-2 border-blue-500 rounded-[1.25rem] p-5 flex flex-col justify-between shadow-[0_4px_20px_rgba(99,102,241,0.08)] cursor-pointer hover:-translate-y-1 transition-transform group">
@@ -227,6 +312,22 @@ const CitizenHome = () => {
                   </div>
                 </div>
 
+                {/* Action Card 5: Share Feedback */}
+                <div onClick={() => navigate('/citizen-feedback')} className="bg-white border border-slate-200 rounded-[1.25rem] p-5 flex flex-col justify-between shadow-sm cursor-pointer hover:-translate-y-1 hover:border-purple-300 hover:shadow-md transition-all group md:col-span-1 col-span-2">
+                  <div className="w-12 h-12 bg-purple-50 rounded-full flex items-center justify-center text-purple-500 mb-4 group-hover:scale-110 transition-transform">
+                    <MessageSquare size={24} />
+                  </div>
+                  <div className="mb-4">
+                    <h3 className="font-bold text-slate-900 text-[15px] mb-1">Share Feedback</h3>
+                    <p className="text-[11px] text-slate-500 font-medium">Rate resolved issues</p>
+                  </div>
+                  <div className="w-full flex justify-end">
+                    <div className="w-8 h-8 rounded-full bg-purple-50 flex items-center justify-center text-purple-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <ArrowRight size={16} />
+                    </div>
+                  </div>
+                </div>
+
               </div>
             </div>
 
@@ -242,7 +343,14 @@ const CitizenHome = () => {
                   {cat.name}
                 </button>
               ))}
-              <button className="flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-semibold whitespace-nowrap bg-white text-slate-600 border border-slate-200 hover:bg-slate-50">
+              <button 
+                onClick={() => {
+                  setToastMsg("More categories coming soon!");
+                  setShowToast(true);
+                  setTimeout(() => setShowToast(false), 3000);
+                }}
+                className="flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-semibold whitespace-nowrap bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
+              >
                 <MoreHorizontal size={14} /> More
               </button>
             </div>
@@ -264,8 +372,26 @@ const CitizenHome = () => {
                 </button>
               </div>
 
+              {/* Map Preview */}
+              <div className="bg-white p-2 rounded-3xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-slate-200 mb-8 overflow-hidden">
+                <div style={{ height: '300px', width: '100%', borderRadius: '20px', overflow: 'hidden', position: 'relative', zIndex: 10 }}>
+                  <MapWrapper center={mapLocation} zoom={13} style={{ height: '100%', width: '100%' }}>
+                    <UserLocationMarker position={mapLocation} />
+                    {nearbyIssues.map(issue => (
+                      <ComplaintMarker 
+                        key={issue.id}
+                        position={[issue.latitude, issue.longitude]} 
+                        color={issue.priority_score > 90 ? 'red' : issue.priority_score > 60 ? 'orange' : 'green'} 
+                        data={{ title: issue.title, category: issue.category, status: issue.status, priority: issue.priority_score > 90 ? 'High' : issue.priority_score > 60 ? 'Medium' : 'Low', location: issue.city_or_village, support: issue.supporters }} 
+                        onViewDetails={() => navigate('/track-complaint')}
+                      />
+                    ))}
+                  </MapWrapper>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {communityIssues.map((issue) => (
+                {filteredIssues.map((issue) => (
                   <div key={issue.id} className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden group hover:shadow-md transition-shadow flex flex-col">
 
                     {/* IMAGE HEADER */}
@@ -293,7 +419,7 @@ const CitizenHome = () => {
 
                       <div className="flex flex-col gap-2 mb-6">
                         <div className="flex items-center gap-2 text-sm text-slate-500 font-medium">
-                          <MapPin size={14} /> {issue.location}
+                          <MapPin size={14} /> {userLocation}
                         </div>
                         <div className="flex items-center gap-2 text-sm text-slate-500 font-medium">
                           <Activity size={14} /> {issue.distance} from you
@@ -305,12 +431,12 @@ const CitizenHome = () => {
                       </div>
 
                       {/* BUTTONS */}
-                      <div className="grid grid-cols-2 gap-3">
-                        <button className="bg-blue-500 text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-blue-600 transition-colors flex items-center justify-center gap-2">
-                          <ThumbsUp size={14} /> Support
-                        </button>
-                        <button className="bg-white text-blue-500 border border-blue-200 py-2.5 rounded-lg text-sm font-semibold hover:bg-blue-50 transition-colors">
-                          View Details
+                      <div className="grid grid-cols-1 gap-3">
+                        <button 
+                          onClick={() => handleSupport(issue.id)}
+                          className={`${issue.isSupported ? 'bg-green-500 hover:bg-green-600' : 'bg-blue-500 hover:bg-blue-600'} text-white py-2.5 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2`}
+                        >
+                          {issue.isSupported ? <CheckCircle2 size={14} /> : <ThumbsUp size={14} />} {issue.isSupported ? 'Supported' : 'Support'}
                         </button>
                       </div>
                     </div>
@@ -319,7 +445,7 @@ const CitizenHome = () => {
               </div>
 
               <div className="mt-8 text-center flex justify-center">
-                <button className="text-sm font-semibold text-slate-600 flex items-center gap-2 hover:text-blue-600 transition-colors">
+                <button onClick={() => setShowMapModal(true)} className="text-sm font-semibold text-slate-600 flex items-center gap-2 hover:text-blue-600 transition-colors">
                   View All Nearby Issues <ChevronDown size={16} className="-rotate-90" />
                 </button>
               </div>
@@ -414,7 +540,14 @@ const CitizenHome = () => {
                 </div>
 
                 <div className="mt-8 pt-4 border-t border-slate-100 flex justify-center">
-                  <button className="text-[13px] font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1.5">
+                  <button 
+                    onClick={() => {
+                      setToastMsg("Full Live Updates feed coming soon!");
+                      setShowToast(true);
+                      setTimeout(() => setShowToast(false), 3000);
+                    }}
+                    className="text-[13px] font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1.5"
+                  >
                     See All Updates <ChevronDown size={14} className="-rotate-90" />
                   </button>
                 </div>
@@ -494,8 +627,12 @@ const CitizenHome = () => {
             </div>
             <div className="p-6 flex flex-col gap-5">
 
-              <button onClick={handleUseCurrentLocation} className="w-full bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold py-3.5 rounded-xl transition-colors flex items-center justify-center gap-2 shadow-sm">
-                <Crosshair size={18} /> Use Current Location
+              <button onClick={handleUseCurrentLocation} disabled={isDetectingLocation} className="w-full bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold py-3.5 rounded-xl transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                {isDetectingLocation ? (
+                  <span className="flex items-center gap-2"><Crosshair size={18} className="animate-spin" /> Detecting Location...</span>
+                ) : (
+                  <span className="flex items-center gap-2"><Crosshair size={18} /> Use Current Location</span>
+                )}
               </button>
 
               <div className="flex items-center gap-4">
@@ -521,6 +658,42 @@ const CitizenHome = () => {
               <button onClick={handleSaveLocation} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-6 rounded-xl transition-colors shadow-md">
                 Apply Filter
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Community Issues Map Modal */}
+      {showMapModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setShowMapModal(false)}></div>
+          <div className="bg-white rounded-3xl w-full max-w-4xl h-[80vh] flex flex-col relative z-10 overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
+              <div>
+                <h3 className="font-black text-xl text-slate-900 flex items-center gap-2"><MapPin className="text-blue-600" /> Community Issues Map</h3>
+                <p className="text-sm font-medium text-slate-500 mt-1">Live view of active complaints in your area.</p>
+              </div>
+              <button onClick={() => setShowMapModal(false)} className="w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="flex-1 bg-slate-50 p-4 sm:p-6 relative">
+               <iframe 
+                  title="Community Issues Map"
+                  src={`https://www.openstreetmap.org/export/embed.html?bbox=75.75,26.85,75.90,26.98&layer=mapnik&marker=26.91,75.82`}
+                  style={{width: '100%', height: '100%', border: 0, borderRadius: '1rem'}}
+                  className="bg-slate-200 shadow-inner"
+               ></iframe>
+
+               <div className="absolute bottom-10 left-10 bg-white/90 backdrop-blur-md p-4 rounded-xl shadow-lg border border-slate-200 pointer-events-none">
+                  <h4 className="text-xs font-black text-slate-900 uppercase tracking-widest mb-3">Map Legend</h4>
+                  <div className="space-y-2">
+                     <div className="flex items-center gap-2 text-sm font-bold text-slate-600"><div className="w-3 h-3 rounded-full bg-red-500"></div> Critical</div>
+                     <div className="flex items-center gap-2 text-sm font-bold text-slate-600"><div className="w-3 h-3 rounded-full bg-orange-500"></div> High Priority</div>
+                     <div className="flex items-center gap-2 text-sm font-bold text-slate-600"><div className="w-3 h-3 rounded-full bg-blue-500"></div> Under Review</div>
+                  </div>
+               </div>
             </div>
           </div>
         </div>

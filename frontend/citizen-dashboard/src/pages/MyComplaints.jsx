@@ -26,7 +26,7 @@ const MyComplaints = () => {
         </h1>
 
         <div className="flex flex-col gap-6">
-          {myComplaints.map((complaint) => (
+          {myComplaints.filter(c => c.status !== "Resolved" && c.status !== "Completed").map((complaint) => (
             <div key={complaint.id} className="bg-white rounded-3xl p-6 md:p-8 border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6 hover:shadow-md transition-shadow">
               <div className="flex-1">
                  <div className="flex items-center gap-3 mb-3">

@@ -15,6 +15,8 @@ import MPLogin from './pages/MPLogin';
 import MPRegistration from './pages/MPRegistration';
 import MyComplaints from './pages/MyComplaints';
 import EmergencyAlerts from './pages/EmergencyAlerts';
+import CitizenFeedback from './pages/CitizenFeedback';
+import MapTestPage from './pages/MapTestPage';
 
 const ProtectedCitizenRoute = ({ children }) => {
   const profile = localStorage.getItem('janvaani_citizen_profile');
@@ -41,6 +43,7 @@ export default function App() {
         <Route path="/profile" element={<ProtectedCitizenRoute><Profile /></ProtectedCitizenRoute>} />
         <Route path="/my-complaints" element={<ProtectedCitizenRoute><MyComplaints /></ProtectedCitizenRoute>} />
         <Route path="/emergency-alerts" element={<ProtectedCitizenRoute><EmergencyAlerts /></ProtectedCitizenRoute>} />
+        <Route path="/citizen-feedback" element={<ProtectedCitizenRoute><CitizenFeedback /></ProtectedCitizenRoute>} />
         
         {/* Unprotected for now but could be protected if needed */}
         <Route path="/call-completed" element={<CallCompleted />} />
@@ -52,6 +55,9 @@ export default function App() {
         <Route path="/mp-register" element={<MPRegistration />} />
         <Route path="/mp-dashboard" element={<MPDashboard />} />
         
+        {/* Test Route */}
+        <Route path="/map-test" element={<MapTestPage />} />
+
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

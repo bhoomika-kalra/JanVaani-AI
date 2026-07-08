@@ -6,6 +6,21 @@ import logo from '../assets/logo.svg';
 const ComplaintRegistered = () => {
   const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
+  const [complaintId] = useState(() => {
+    const saved = localStorage.getItem('complaintResponse');
+    if (saved) {
+      try { return JSON.parse(saved).complaint_id || `JV-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`; } catch(e){}
+    }
+    return `JV-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`;
+  });
+  
+  const [details] = useState(() => {
+    const saved = localStorage.getItem('analysisData');
+    if (saved) {
+      try { return JSON.parse(saved); } catch(e){}
+    }
+    return { category: 'Water Supply', location: 'Rampura', urgency: 'High', confidence: 92, language: 'English' };
+  });
 
   const handleCopy = () => {
     setCopied(true);
@@ -63,9 +78,9 @@ const ComplaintRegistered = () => {
               
               <p className="text-blue-200 font-bold uppercase tracking-widest text-xs mb-2">Complaint ID</p>
               
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6 w-full">
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-4 w-full">
                 <div className="text-3xl sm:text-4xl font-black tracking-widest text-white">
-                  JV-2026-001245
+                  {complaintId}
                 </div>
                 <button 
                   onClick={handleCopy}
@@ -76,9 +91,18 @@ const ComplaintRegistered = () => {
                 </button>
               </div>
               
-              <p className="text-sm text-blue-200 font-medium flex items-center justify-center gap-2 max-w-sm mx-auto text-center leading-relaxed">
-                <Info size={16} className="shrink-0 text-blue-300" /> Your Complaint ID has also been sent to your registered mobile number via SMS.
-              </p>
+              <div className="bg-blue-700/50 p-4 rounded-xl border border-blue-500/30 text-left w-full mt-4">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-[10px] uppercase font-bold text-blue-300 tracking-wider">To: +91-XXXXX-XX984</span>
+                  <span className="text-[10px] uppercase font-bold text-green-300 tracking-wider flex items-center gap-1"><CheckCircle2 size={12}/> Sent</span>
+                </div>
+                <p className="text-sm font-medium text-white italic">
+                  "JanVaani AI: Your complaint has been registered successfully.<br/>
+                  Complaint ID: {complaintId}<br/>
+                  Category: {details.category || 'General'}<br/>
+                  Status: Submitted."
+                </p>
+              </div>
             </div>
           </div>
         </section>
@@ -93,7 +117,7 @@ const ComplaintRegistered = () => {
                 <AlertCircle size={20} className="text-slate-400" />
                 <div>
                   <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Category</p>
-                  <p className="text-[15px] font-bold text-slate-900">Water Supply</p>
+                  <p className="text-[15px] font-bold text-slate-900">{details.category || 'General'}</p>
                 </div>
               </div>
 
@@ -101,7 +125,7 @@ const ComplaintRegistered = () => {
                 <MapPin size={20} className="text-slate-400" />
                 <div>
                   <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Location</p>
-                  <p className="text-[15px] font-bold text-slate-900">Rampura</p>
+                  <p className="text-[15px] font-bold text-slate-900">{details.location || 'Unknown'}</p>
                 </div>
               </div>
 
@@ -109,7 +133,7 @@ const ComplaintRegistered = () => {
                 <Activity size={20} className="text-orange-500" />
                 <div>
                   <p className="text-[10px] uppercase font-bold text-orange-600/70 tracking-wider">Priority</p>
-                  <p className="text-[15px] font-bold text-orange-600">High</p>
+                  <p className="text-[15px] font-bold text-orange-600">{details.urgency || 'Medium'}</p>
                 </div>
               </div>
 
@@ -117,7 +141,7 @@ const ComplaintRegistered = () => {
                 <Percent size={20} className="text-green-500" />
                 <div>
                   <p className="text-[10px] uppercase font-bold text-green-600/70 tracking-wider">Confidence</p>
-                  <p className="text-[15px] font-bold text-green-600">92%</p>
+                  <p className="text-[15px] font-bold text-green-600">{details.confidence || 90}%</p>
                 </div>
               </div>
 

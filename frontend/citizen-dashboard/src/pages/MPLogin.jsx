@@ -10,6 +10,7 @@ import {
   LockKeyhole
 } from 'lucide-react';
 import logo from '../assets/logo.svg';
+import apiClient from '../services/apiClient';
 
 const MPLogin = () => {
   const navigate = useNavigate();
@@ -18,11 +19,22 @@ const MPLogin = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     if (email.trim() && password.trim()) {
-      localStorage.setItem('mp_session_dummy', 'true');
-      navigate('/mp-dashboard');
+      try {
+        const res = await apiClient.post('/mp/login', {
+          email: email.trim(),
+          password: password.trim()
+        });
+        const { access_token, mp_user } = res.data;
+        
+        localStorage.setItem('janvaani_token', access_token);
+        localStorage.setItem('mp_session', JSON.stringify(mp_user));
+        navigate('/mp-dashboard');
+      } catch (err) {
+        alert(err.response?.data?.detail || 'Login failed. Please check your credentials.');
+      }
     }
   };
 

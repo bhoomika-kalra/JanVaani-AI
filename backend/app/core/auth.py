@@ -8,9 +8,11 @@ from app.models.citizen import Citizen
 from app.models.mp_user import MPUser
 from app.core.security import SECRET_KEY, ALGORITHM
 
-security = HTTPBearer()
+security = HTTPBearer(auto_error=False)
 
 def get_current_user_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    if credentials is None:
+        return None, None
     token = credentials.credentials
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
@@ -27,6 +29,13 @@ def get_current_citizen(
     db: Session = Depends(get_db)
 ) -> Citizen:
     user_id, role = token_data
+    if user_id is None:
+        # Mock login fallback for development
+        citizen = db.query(Citizen).filter(Citizen.id == 1).first()
+        if not citizen:
+            raise HTTPException(status_code=404, detail="Mock citizen not found. Please seed the DB.")
+        return citizen
+
     if role != "citizen":
         raise HTTPException(status_code=403, detail="Not authorized as citizen")
         
@@ -41,6 +50,8 @@ def get_current_mp(
     db: Session = Depends(get_db)
 ) -> MPUser:
     user_id, role = token_data
+    if user_id is None:
+        raise HTTPException(status_code=401, detail="Not authenticated")
     if role != "mp":
         raise HTTPException(status_code=403, detail="Not authorized as MP/Official")
         

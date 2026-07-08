@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BrainCircuit, ShieldCheck, Upload, ArrowRight } from 'lucide-react';
 import logo from '../assets/logo.svg';
+import apiClient from '../services/apiClient';
 
 const MPRegistration = () => {
   const navigate = useNavigate();
@@ -26,15 +27,10 @@ const MPRegistration = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleRegister = (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
     if(!formData.name || !formData.constituency) {
       alert("Name and Constituency are required!");
-      return;
-    }
-    
-    if (!uploadedFile) {
-      alert("Please upload your official ID for verification.");
       return;
     }
     
@@ -48,19 +44,35 @@ const MPRegistration = () => {
       return;
     }
     
-    // Create dummy session based on form
-    const dummySession = {
-      name: formData.name,
-      role: formData.role,
-      email: formData.email || formData.mobile, // store identifier for login
-      password: formData.password, // store dummy password
-      constituency: formData.constituency,
-      district: formData.district || formData.constituency,
-      state: formData.state
-    };
-    
-    localStorage.setItem('mp_session', JSON.stringify(dummySession));
-    navigate('/mp-dashboard');
+    const fileToUpload = fileInputRef.current?.files?.[0];
+    if (!fileToUpload) {
+      alert("Please upload your official ID for verification.");
+      return;
+    }
+
+    const formDataToSend = new FormData();
+    formDataToSend.append('full_name', formData.name);
+    formDataToSend.append('email', formData.email);
+    formDataToSend.append('mobile', formData.mobile);
+    formDataToSend.append('state', formData.state);
+    formDataToSend.append('district', formData.district);
+    formDataToSend.append('constituency', formData.constituency);
+    formDataToSend.append('official_id_number', formData.idNumber);
+    formDataToSend.append('password', formData.password);
+    formDataToSend.append('file', fileToUpload);
+
+    try {
+      const res = await apiClient.post('/mp/register', formDataToSend, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      const { access_token, mp_user } = res.data;
+      
+      localStorage.setItem('janvaani_token', access_token);
+      localStorage.setItem('mp_session', JSON.stringify(mp_user));
+      navigate('/mp-dashboard');
+    } catch (err) {
+      alert(err.response?.data?.detail || 'Registration failed.');
+    }
   };
 
   return (

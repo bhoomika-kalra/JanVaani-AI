@@ -7,9 +7,11 @@ from app.core.auth import get_current_mp
 from app.models.mp_user import MPUser
 from app.models.complaint import Complaint, ComplaintTimeline
 from app.models.notification_log import NotificationLog
+from app.models.citizen import Citizen
 from app.models.department import Department
 from app.schemas.workflow import NoteCreate, DepartmentAssign
 from app.schemas.complaint import TimelineResponse
+from app.services.notification.sms_service import send_sms
 
 router = APIRouter()
 
@@ -32,17 +34,38 @@ def _update_workflow_status(db: Session, complaint_id: int, status_title: str, d
     )
     db.add(timeline)
     
-    # Create Notification Log
+    # Create Notification Log (In-App)
     notif = NotificationLog(
-        citizen_id=complaint.citizen_id,
+        user_id=complaint.citizen_id,
+        user_type="citizen",
         message=f"Update on your complaint {complaint.complaint_uid}: {status_title}. {description}",
-        status="Sent",
-        type="SMS"
+        type="in_app"
     )
     db.add(notif)
     
     db.commit()
     db.refresh(complaint)
+    
+    # Send actual SMS if it's one of the trackable workflow events
+    sms_events = ["Under Review", "AI Recommended", "Approved", "Work Commenced", "Project Completed"]
+    if status_title in sms_events:
+        citizen = db.query(Citizen).filter(Citizen.id == complaint.citizen_id).first()
+        if citizen:
+            # Map "Project Completed" back to "Completed", "Work Commenced" back to "Work Started" for template matching
+            event_type = status_title
+            if status_title == "Project Completed":
+                event_type = "Completed"
+            elif status_title == "Work Commenced":
+                event_type = "Work Started"
+                
+            send_sms(
+                db=db,
+                citizen_id=citizen.id,
+                phone_number=citizen.phone_number,
+                complaint_id=complaint.complaint_uid,
+                event_type=event_type,
+                category=str(complaint.department_id) if complaint.department_id else ""
+            )
     
     # Return updated timeline
     timelines = db.query(ComplaintTimeline).filter(ComplaintTimeline.complaint_id == complaint.id).order_by(ComplaintTimeline.created_at.desc()).all()

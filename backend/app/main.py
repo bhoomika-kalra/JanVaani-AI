@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 import time
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.core.config import settings
 from app.core.errors import add_exception_handlers
@@ -73,6 +74,19 @@ def create_app() -> FastAPI:
     @app.get("/health", tags=["Health"])
     async def health_check():
         return {"status": "ok", "version": settings.VERSION}
+
+    @app.post("/admin/populate-demo", tags=["Admin"])
+    async def populate_demo():
+        db = SessionLocal()
+        try:
+            # You might want to clear tables or just run seed_db if it handles existence
+            seed_db(db)
+            return {"status": "success", "message": "Demo data populated."}
+        finally:
+            db.close()
+
+    # Mount static files for uploads
+    app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
     return app
 

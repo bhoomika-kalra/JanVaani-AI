@@ -1,26 +1,39 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowLeft, CheckCircle2, Globe, Copy, AlertCircle, MapPin, Percent, Info, Search, Home, ChevronRight, MessageSquare, ClipboardCheck, Bell, Activity, BrainCircuit, Languages, FilePlus2, PlaySquare } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import logo from '../assets/logo.svg';
+import { complaintService } from '../services/complaintService';
 
 const ComplaintRegistered = () => {
-  const navigate = useNavigate();
+  const location = useLocation();
   const [copied, setCopied] = useState(false);
-  const [complaintId] = useState(() => {
-    const saved = localStorage.getItem('complaintResponse');
-    if (saved) {
-      try { return JSON.parse(saved).complaint_id || `JV-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`; } catch(e){}
-    }
-    return `JV-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`;
-  });
-  
-  const [details] = useState(() => {
-    const saved = localStorage.getItem('analysisData');
-    if (saved) {
-      try { return JSON.parse(saved); } catch(e){}
-    }
-    return { category: 'Water Supply', location: 'Rampura', urgency: 'High', confidence: 92, language: 'English' };
-  });
+  const [complaintId, setComplaintId] = useState("Loading...");
+  const [details, setDetails] = useState({ category: 'Loading', location: 'Loading', urgency: 'Normal' });
+
+  useEffect(() => {
+    const fetchComplaint = async () => {
+      // Get ID from navigation state or localStorage fallback
+      const idToFetch = location.state?.complaintId || localStorage.getItem('last_complaint_id');
+      
+      if (idToFetch) {
+        try {
+          const data = await complaintService.getComplaint(idToFetch);
+          setComplaintId(data.complaint_uid);
+          setDetails({
+            category: data.title || 'General',
+            location: data.address || 'Unknown',
+            urgency: data.severity || 'Normal',
+            confidence: 90, // Dummy fallback for now
+            language: 'English'
+          });
+        } catch (err) {
+          console.error("Failed to load complaint details", err);
+          setComplaintId(idToFetch); // Fallback to DB ID if UID fetch fails
+        }
+      }
+    };
+    fetchComplaint();
+  }, [location.state]);
 
   const handleCopy = () => {
     setCopied(true);

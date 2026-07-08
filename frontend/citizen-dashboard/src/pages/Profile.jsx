@@ -1,11 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Edit3, ShieldAlert, FileText, Bell, Globe, HelpCircle, LogOut, Phone, MapPin, Mail, ChevronRight, Activity, CheckCircle2, AlertCircle, ThumbsUp, X, Save } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-
-const myComplaints = [
-  { id: "JV-2026-001245", title: "Water Supply Complaint", location: "Sector 4 Main Road", date: "Oct 12, 2026", status: "Under Review", priority: "High", statusColor: "text-yellow-600 bg-yellow-100" },
-  { id: "JV-2026-000892", title: "Potholes on Link Road", location: "Sector 4, Block B", date: "Sep 28, 2026", status: "Resolved", priority: "Medium", statusColor: "text-green-600 bg-green-100" }
-];
+import apiClient from '../services/apiClient';
 
 const supportedIssues = [
   { title: "No Electricity for 12 hours", location: "Rampura Main", status: "In Progress", supporters: 342 },
@@ -66,6 +62,49 @@ const Profile = () => {
   };
 
   const [userInfo, setUserInfo] = useState(getInitialProfile());
+  const [complaints, setComplaints] = useState([]);
+  const [isLoadingComplaints, setIsLoadingComplaints] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Fetch Profile
+        const profileRes = await apiClient.get('/citizens/profile');
+        const citizen = profileRes.data;
+        
+        setUserInfo(prev => ({
+          ...prev,
+          fullName: citizen.name || prev.fullName,
+          mobileNumber: citizen.phone_number || prev.mobileNumber,
+          constituency: citizen.constituency || prev.constituency,
+          preferredLanguage: citizen.language_preference || prev.preferredLanguage
+        }));
+        setEditForm(prev => ({
+          ...prev,
+          fullName: citizen.name || prev.fullName,
+          mobileNumber: citizen.phone_number || prev.mobileNumber,
+          constituency: citizen.constituency || prev.constituency,
+          preferredLanguage: citizen.language_preference || prev.preferredLanguage
+        }));
+        if (citizen.language_preference) {
+          setSelectedLanguage(citizen.language_preference);
+        }
+
+        // Fetch Complaints
+        setIsLoadingComplaints(true);
+        const complaintsRes = await apiClient.get('/complaints/citizen/me');
+        setComplaints(complaintsRes.data);
+      } catch (err) {
+        console.error("Failed to fetch data", err);
+        if (err.response?.status === 401 || err.response?.status === 403) {
+          handleResetRegistration();
+        }
+      } finally {
+        setIsLoadingComplaints(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   const [isEditingInfo, setIsEditingInfo] = useState(false);
   const [isEditingLanguage, setIsEditingLanguage] = useState(false);
@@ -81,14 +120,21 @@ const Profile = () => {
     setNotifications(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const handleSaveInfo = () => {
-    setUserInfo({ ...editForm });
-    setSelectedLanguage(editForm.preferredLanguage);
-    setIsEditingInfo(false);
-    
-    // Save to local storage
-    const currentProfile = JSON.parse(localStorage.getItem('janvaani_citizen_profile') || '{}');
-    localStorage.setItem('janvaani_citizen_profile', JSON.stringify({ ...currentProfile, ...editForm }));
+  const handleSaveInfo = async () => {
+    try {
+      await apiClient.put('/citizens/profile', {
+        name: editForm.fullName,
+        constituency: editForm.constituency
+      });
+      setUserInfo({ ...editForm });
+      setSelectedLanguage(editForm.preferredLanguage);
+      setIsEditingInfo(false);
+      
+      const currentProfile = JSON.parse(localStorage.getItem('janvaani_citizen_profile') || '{}');
+      localStorage.setItem('janvaani_citizen_profile', JSON.stringify({ ...currentProfile, ...editForm }));
+    } catch (err) {
+      alert("Failed to update profile");
+    }
   };
 
   const handleCancelInfo = () => {
@@ -111,7 +157,8 @@ const Profile = () => {
   };
 
   const handleResetRegistration = () => {
-    if (window.confirm("Are you sure you want to reset your registration on this device? All local data will be cleared and you will be logged out.")) {
+    if (window.confirm("Are you sure you want to log out?")) {
+      localStorage.removeItem('janvaani_token');
       localStorage.removeItem('janvaani_citizen_profile');
       navigate('/');
     }
@@ -288,17 +335,17 @@ const Profile = () => {
             <div className="bg-white rounded-3xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200 flex flex-col relative overflow-hidden">
               <div className="absolute -right-4 -bottom-4 opacity-5 text-slate-900"><FileText size={80} /></div>
               <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Total Complaints</span>
-              <span className="text-3xl font-black text-slate-900 relative z-10">14</span>
+              <span className="text-3xl font-black text-slate-900 relative z-10">{complaints.length}</span>
             </div>
             <div className="bg-white rounded-3xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200 flex flex-col relative overflow-hidden">
               <div className="absolute -right-4 -bottom-4 opacity-5 text-slate-900"><Activity size={80} /></div>
               <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Active</span>
-              <span className="text-3xl font-black text-slate-900 relative z-10">3</span>
+              <span className="text-3xl font-black text-slate-900 relative z-10">{complaints.filter(c => c.status !== 'completed' && c.status !== 'resolved').length}</span>
             </div>
             <div className="bg-white rounded-3xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200 flex flex-col relative overflow-hidden">
               <div className="absolute -right-4 -bottom-4 opacity-5 text-slate-900"><CheckCircle2 size={80} /></div>
               <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Resolved</span>
-              <span className="text-3xl font-black text-slate-900 relative z-10">11</span>
+              <span className="text-3xl font-black text-slate-900 relative z-10">{complaints.filter(c => c.status === 'completed' || c.status === 'resolved').length}</span>
             </div>
             <div className="bg-white rounded-3xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200 flex flex-col relative overflow-hidden">
               <div className="absolute -right-4 -bottom-4 opacity-5 text-slate-900"><ThumbsUp size={80} /></div>
@@ -315,14 +362,21 @@ const Profile = () => {
             <button className="text-blue-600 text-xs font-bold hover:underline">View All</button>
           </div>
           <div className="space-y-4">
-            {myComplaints.map(complaint => (
+            {isLoadingComplaints ? (
+              <p className="text-sm text-slate-500 text-center py-4">Loading complaints...</p>
+            ) : complaints.length === 0 ? (
+              <p className="text-sm text-slate-500 text-center py-4">You have not submitted any complaints yet.</p>
+            ) : complaints.map(complaint => {
+              const statusColor = complaint.status === 'resolved' ? "text-green-600 bg-green-100" : "text-yellow-600 bg-yellow-100";
+              const dateStr = new Date(complaint.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+              return (
               <div key={complaint.id} className="bg-white rounded-3xl p-5 sm:p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200 flex flex-col gap-4">
                 <div className="flex items-start justify-between">
                   <div>
                     <h3 className="font-bold text-slate-900 text-lg mb-1">{complaint.title}</h3>
-                    <p className="text-sm text-slate-500 font-medium flex items-center gap-1"><MapPin size={14}/> {complaint.location}</p>
+                    <p className="text-sm text-slate-500 font-medium flex items-center gap-1"><MapPin size={14}/> {complaint.address || "Unknown Location"}</p>
                   </div>
-                  <span className={`px-3 py-1 rounded-full text-xs font-bold ${complaint.statusColor}`}>
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold ${statusColor} capitalize`}>
                     {complaint.status}
                   </span>
                 </div>
@@ -330,15 +384,15 @@ const Profile = () => {
                 <div className="flex items-center gap-6">
                   <div>
                     <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">ID</span>
-                    <span className="text-sm font-semibold text-slate-800">{complaint.id}</span>
+                    <span className="text-sm font-semibold text-slate-800">{complaint.complaint_uid}</span>
                   </div>
                   <div>
                     <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Date</span>
-                    <span className="text-sm font-semibold text-slate-800">{complaint.date}</span>
+                    <span className="text-sm font-semibold text-slate-800">{dateStr}</span>
                   </div>
                   <div>
                     <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Priority</span>
-                    <span className="text-sm font-semibold text-slate-800">{complaint.priority}</span>
+                    <span className="text-sm font-semibold text-slate-800 capitalize">{complaint.severity}</span>
                   </div>
                 </div>
 
@@ -351,7 +405,7 @@ const Profile = () => {
                   </button>
                 </div>
               </div>
-            ))}
+            )})}
           </div>
         </section>
 

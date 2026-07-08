@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { healthService } from './services/healthService';
 import LandingPage from './pages/LandingPage';
 import CitizenHome from './pages/CitizenHome';
 import CitizenRegister from './pages/CitizenRegister';
@@ -17,16 +18,31 @@ import MyComplaints from './pages/MyComplaints';
 import EmergencyAlerts from './pages/EmergencyAlerts';
 import CitizenFeedback from './pages/CitizenFeedback';
 import MapTestPage from './pages/MapTestPage';
+import DevTestPage from './pages/DevTestPage';
 
 const ProtectedCitizenRoute = ({ children }) => {
-  const profile = localStorage.getItem('janvaani_citizen_profile');
-  if (!profile) {
+  const token = localStorage.getItem('janvaani_token');
+  if (!token) {
     return <Navigate to="/citizen-register" replace />;
   }
   return children;
 };
 
+const ProtectedMPRoute = ({ children }) => {
+  const token = localStorage.getItem('janvaani_token');
+  if (!token) {
+    return <Navigate to="/mp-login" replace />;
+  }
+  return children;
+};
+
 export default function App() {
+  useEffect(() => {
+    healthService.checkBackend()
+      .then(() => console.log("Backend connected successfully"))
+      .catch((err) => console.error("Backend connection failed", err));
+  }, []);
+
   return (
     <BrowserRouter>
       <Routes>
@@ -53,10 +69,13 @@ export default function App() {
         {/* MP Routes */}
         <Route path="/mp-login" element={<MPLogin />} />
         <Route path="/mp-register" element={<MPRegistration />} />
-        <Route path="/mp-dashboard" element={<MPDashboard />} />
+        <Route path="/mp-dashboard" element={<ProtectedMPRoute><MPDashboard /></ProtectedMPRoute>} />
         
         {/* Test Route */}
         <Route path="/map-test" element={<MapTestPage />} />
+        
+        {/* Developer Utilities (conditional in real app, accessible for demo here) */}
+        <Route path="/dev-test" element={<DevTestPage />} />
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

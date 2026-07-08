@@ -1,12 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Calendar, User, LayoutDashboard, BrainCircuit, AlertTriangle, CheckCircle2, Users, MapPin, Activity, FileText, ChevronRight, Share2, Download, TrendingUp, ThumbsUp, Layers, CheckSquare, Settings, ArrowRight, ShieldAlert, Cpu, Network, Clock, BarChart3, PieChart, Droplets, Car, Zap, Trash2, Heart, Filter, FileSpreadsheet, Eye, MessageSquare, ListFilter, HelpCircle, Mail, Plus, X, Sparkles, Send } from 'lucide-react';
+import { Search, Calendar, User, LayoutDashboard, BrainCircuit, AlertTriangle, CheckCircle2, Users, MapPin, Activity, FileText, ChevronRight, Share2, Download, TrendingUp, ThumbsUp, Layers, CheckSquare, Settings, ArrowRight, ShieldAlert, Cpu, Network, Clock, BarChart3, PieChart, Droplets, Car, Zap, Trash2, Heart, Filter, FileSpreadsheet, Eye, MessageSquare, ListFilter, HelpCircle, Mail, Plus, X, Sparkles, Send, LogOut } from 'lucide-react';
 import logo from '../assets/logo.svg';
+import apiClient from '../services/apiClient';
 import MapWrapper from '../components/maps/MapWrapper';
 import { Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
-import { getMPHotspots } from '../services/mapService';
 import AIReportModule from '../components/AIReportModule';
+import { aiService } from '../services/aiService';
+import { mpService } from '../services/mpService';
+import { dashboardService } from '../services/dashboardService';
+import { reportService } from '../services/reportService';
+import { workflowService } from '../services/workflowService';
+import { feedbackService } from '../services/feedbackService';
 
 const getColoredIcon = (color) => {
   if (!color || color === 'blue') return new L.Icon.Default();
@@ -45,6 +51,9 @@ const MPDashboard = () => {
   const [assignedDept, setAssignedDept] = useState("Public Works (PWD)");
   const [assignedBudget, setAssignedBudget] = useState("₹4.5L - ₹5.2L");
   
+  const [aiExplainability, setAiExplainability] = useState(null);
+  const [aiRecommendation, setAiRecommendation] = useState(null);
+  
   // Project Actions State
   const [projectStatus, setProjectStatus] = useState('Executive Review');
   const [projectActivity, setProjectActivity] = useState([
@@ -54,12 +63,61 @@ const MPDashboard = () => {
   
   const [mpHotspots, setMpHotspots] = useState([]);
   
+  const handleLogout = () => {
+    localStorage.removeItem('janvaani_token');
+    localStorage.removeItem('mp_session');
+    localStorage.removeItem('mp_session_dummy');
+    navigate('/');
+  };
+
   useEffect(() => {
+    const fetchMpProfile = async () => {
+      try {
+        const data = await mpService.getProfile();
+        const profileData = {
+          name: data.name || data.full_name,
+          role: data.role === 'mp' ? 'Member of Parliament' : 'Official',
+          constituency: data.constituency,
+          district: data.district,
+          state: data.state,
+          email: data.email,
+          mobile: data.mobile
+        };
+        setMpSession(profileData);
+        setEditProfileForm(profileData);
+        localStorage.setItem('mp_session', JSON.stringify(profileData));
+      } catch (err) {
+        console.error("Failed to fetch MP profile", err);
+      }
+    };
+    fetchMpProfile();
+
     const fetchMpHotspots = async () => {
-      const hotspots = await getMPHotspots('Kota');
-      setMpHotspots(hotspots);
+      const hotspots = await dashboardService.getHotspots();
+      if (hotspots && hotspots.length > 0) setMpHotspots(hotspots);
     };
     fetchMpHotspots();
+
+    const fetchDashboardData = async () => {
+      try {
+        const overview = await dashboardService.getOverview();
+        if (overview) setRegionData(prev => ({ ...prev, ...overview }));
+        
+        const queue = await dashboardService.getPriorityQueue();
+        if (queue && queue.length > 0) setAiQueue(queue);
+      } catch (err) {
+        console.error("Failed to load dashboard core data", err);
+      }
+    };
+    fetchDashboardData();
+    
+    // Set up real-time polling (e.g. every 30 seconds)
+    const interval = setInterval(() => {
+      fetchMpHotspots();
+      fetchDashboardData();
+    }, 30000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   const [mpSession, setMpSession] = useState(() => {
@@ -98,25 +156,20 @@ const MPDashboard = () => {
   useEffect(() => {
     const fetchFeedback = async () => {
       try {
-        const res = await fetch("http://localhost:8000/api/v1/feedback/mp");
-        if (res.ok) {
-          const data = await res.json();
-          if (data.length > 0) {
-            setFeedbacks(data.map(d => ({
-              citizen_id: d.citizen_id || "Anonymous",
-              complaint_id: d.complaint_id || "Unknown",
-              comment: d.comment,
-              sentiment: d.sentiment,
-              created_at: "Just now",
-              flagged: d.flagged_for_review
-            })));
-          }
+        const data = await feedbackService.getFeedback();
+        if (data && data.length > 0) {
+          setFeedbacks(data.map(d => ({
+            citizen_id: d.name || d.citizen_id || "Anonymous",
+            complaint_id: d.location || d.complaint_id || "Unknown",
+            comment: d.comment,
+            sentiment: d.sentiment,
+            created_at: d.created_at || "Just now",
+            flagged: d.flagged_for_review
+          })));
         }
-        const sumRes = await fetch("http://localhost:8000/api/v1/feedback/mp/summary");
-        if (sumRes.ok) {
-          const sumData = await sumRes.json();
-          if (sumData.positive !== undefined) setFeedbackSummary(sumData);
-        }
+        
+        const sumData = await feedbackService.getFeedbackSummary();
+        if (sumData) setFeedbackSummary(sumData);
       } catch (err) {
         console.error("Failed to fetch MP feedback", err);
       }
@@ -125,8 +178,7 @@ const MPDashboard = () => {
 
     const fetchMorningBrief = async () => {
       try {
-        const res = await fetch("http://localhost:8000/api/v1/ai/mp/morning-brief");
-        const data = await res.json();
+        const data = await aiService.getMPMorningBrief();
         setMorningBrief(data);
       } catch (err) {
         console.error("Failed to fetch morning brief", err);
@@ -146,7 +198,19 @@ const MPDashboard = () => {
       }
     };
     fetchMorningBrief();
-  }, []);
+
+    const fetchAiInsights = async () => {
+      try {
+        const expl = await aiService.generateExplainability({ project_id: activeProjectId });
+        setAiExplainability(expl);
+        const rec = await aiService.generateRecommendation({ constituency: 'Kota' });
+        setAiRecommendation(rec);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+    fetchAiInsights();
+  }, [activeProjectId]);
 
   const handleChatSubmit = async (text) => {
     if (!text.trim()) return;
@@ -156,13 +220,8 @@ const MPDashboard = () => {
     setIsChatLoading(true);
 
     try {
-      const res = await fetch("http://localhost:8000/api/v1/ai/mp/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text, constituency: "Kota" })
-      });
-      const data = await res.json();
-      setChatHistory(prev => [...prev, { sender: 'ai', text: data.answer }]);
+      const data = await aiService.sendMPChatMessage(text, "Kota");
+      setChatHistory(prev => [...prev, { sender: 'ai', text: data.reply || data.answer }]);
     } catch (err) {
       console.error(err);
       setChatHistory(prev => [...prev, { sender: 'ai', text: "I can help with JanVaani AI constituency insights, complaints, reports, and development priorities." }]);
@@ -179,17 +238,13 @@ const MPDashboard = () => {
     setTimeout(() => setShowToast(false), 3000);
   };
 
-  const downloadCSV = () => {
-    const csvContent = "data:text/csv;charset=utf-8,ID,Citizen,Ward,Category,Severity,Status\n" + 
-      complaintsList.map(c => `${c.id},${c.citizen},${c.ward},${c.category},${c.severity},${c.status}`).join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "JanVaani_Constituency_Report.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    triggerAction('Excel (CSV) downloaded successfully.');
+  const downloadCSV = async () => {
+    try {
+      await reportService.downloadComplaintsCSV();
+      triggerAction('Excel (CSV) downloaded successfully.');
+    } catch (err) {
+      triggerAction('Report download service is currently unavailable.');
+    }
   };
 
   const sidebarLinks = [
@@ -203,7 +258,7 @@ const MPDashboard = () => {
   ];
 
   // Dummy Data
-  const regionData = {
+  const [regionData, setRegionData] = useState({
     totalComplaints: 1248,
     activeIssues: 342,
     aiRecommended: 12,
@@ -216,7 +271,7 @@ const MPDashboard = () => {
       { name: 'Ward 08 (East Side)', count: 210, trend: '+24%' },
       { name: 'Ward 19 (West End)', count: 65, trend: '-2%' },
     ]
-  };
+  });
   const [isEditingProject, setIsEditingProject] = useState(false);
   const [editedProject, setEditedProject] = useState(null);
 
@@ -277,7 +332,6 @@ const MPDashboard = () => {
           ))}
         </div>
         
-        <div className="p-4 border-t border-slate-100 space-y-1">
           <button 
             onClick={() => setActiveNav('Settings')}
             className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${activeNav === 'Settings' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
@@ -289,6 +343,12 @@ const MPDashboard = () => {
             className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${activeNav === 'Help & Support' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
           >
             <span className={`${activeNav === 'Help & Support' ? 'text-blue-600' : 'text-slate-400'}`}><HelpCircle size={18}/></span> Help & Support
+          </button>
+          <button 
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold transition-all text-red-600 hover:bg-red-50 hover:text-red-700 mt-2 border border-red-100"
+          >
+            <span className="text-red-500"><LogOut size={18}/></span> Secure Logout
           </button>
         </div>
       </aside>
@@ -451,16 +511,16 @@ const MPDashboard = () => {
                     <div className="inline-flex items-center gap-2 bg-blue-500/30 px-3 py-1.5 rounded-lg text-blue-200 text-[10px] font-black uppercase tracking-widest mb-6 border border-blue-400/30">
                       <Cpu size={14}/> Recommendation of the Day
                     </div>
-                    <h3 className="text-2xl font-black mb-2">Severe Waterlogging in Ward 14</h3>
-                    <p className="text-blue-200 text-sm font-medium mb-6 line-clamp-2">AI predicts catastrophic road damage if not resolved before upcoming monsoon. Immediate drainage clearance required.</p>
+                    <h3 className="text-2xl font-black mb-2">{aiRecommendation?.recommendedProject || 'Severe Waterlogging in Ward 14'}</h3>
+                    <p className="text-blue-200 text-sm font-medium mb-6 line-clamp-2">{aiRecommendation?.reasoning || 'AI predicts catastrophic road damage if not resolved before upcoming monsoon. Immediate drainage clearance required.'}</p>
                     <div className="grid grid-cols-2 gap-4 mb-8">
                       <div className="bg-black/20 p-4 rounded-xl border border-white/5">
-                        <span className="block text-[10px] text-blue-300 font-bold uppercase tracking-widest mb-1">AI Confidence</span>
-                        <span className="text-xl font-black text-white">98.5%</span>
+                        <span className="block text-[10px] text-blue-300 font-bold uppercase tracking-widest mb-1">Impact</span>
+                        <span className="text-xl font-black text-white">{aiRecommendation?.estimatedImpact || 'High'}</span>
                       </div>
                       <div className="bg-black/20 p-4 rounded-xl border border-white/5">
-                        <span className="block text-[10px] text-blue-300 font-bold uppercase tracking-widest mb-1">Est. Budget</span>
-                        <span className="text-xl font-black text-white">₹4.5L</span>
+                        <span className="block text-[10px] text-blue-300 font-bold uppercase tracking-widest mb-1">Est. Budget Priority</span>
+                        <span className="text-xl font-black text-white">{aiRecommendation?.budgetPriority || 'High'}</span>
                       </div>
                     </div>
                   </div>
@@ -538,12 +598,12 @@ const MPDashboard = () => {
                       </div>
                     )}
                   </div>
-                  <h2 className="text-3xl font-black text-slate-900">Severe Waterlogging in Ward 14</h2>
+                  <h2 className="text-3xl font-black text-slate-900">{aiRecommendation?.recommendedProject || 'Severe Waterlogging in Ward 14'}</h2>
                   <p className="text-slate-500 font-medium mt-2">Analyzed from 342 individual complaints across 3 platforms.</p>
                 </div>
                 <div className="bg-slate-900 text-white p-4 rounded-2xl text-center min-w-[120px]">
                   <span className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Priority Score</span>
-                  <span className="text-4xl font-black">98</span>
+                  <span className="text-4xl font-black">{aiExplainability?.priorityScore || 98}</span>
                 </div>
               </div>
 
@@ -555,7 +615,7 @@ const MPDashboard = () => {
                     <div>
                       <h4 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2"><Network size={16}/> Root Cause</h4>
                       <p className="text-slate-700 font-medium leading-relaxed bg-slate-50 p-5 rounded-2xl border border-slate-100">
-                        Historical data indicates the primary drainage arterial under MG Road has collapsed. Recent urban construction (Project ID: 882) likely weakened the structural integrity.
+                        {aiExplainability?.mainReason || 'Historical data indicates the primary drainage arterial under MG Road has collapsed. Recent urban construction (Project ID: 882) likely weakened the structural integrity.'}
                       </p>
                     </div>
                     <div>
@@ -586,11 +646,11 @@ const MPDashboard = () => {
                   <div className="space-y-6 flex-1">
                     <div>
                       <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Recommended Dept</span>
-                      <span className="text-base font-black text-slate-900">Public Works (PWD)</span>
+                      <span className="text-base font-black text-slate-900">{aiExplainability?.responsibleDepartment || 'Public Works (PWD)'}</span>
                     </div>
                     <div>
-                      <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Est. Budget Limit</span>
-                      <span className="text-base font-black text-slate-900">₹4.5L - ₹5.2L</span>
+                      <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Recommended Action</span>
+                      <span className="text-base font-black text-slate-900">{aiExplainability?.recommendedAction || 'Immediate drainage clearance'}</span>
                     </div>
                     <div>
                       <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Similar Historical Case</span>
@@ -1377,15 +1437,22 @@ const MPDashboard = () => {
                    <button onClick={() => setActiveModal(null)} className="px-6 py-3 font-bold text-slate-600 hover:bg-slate-200 rounded-xl transition-colors">
                      Cancel
                    </button>
-                   <button onClick={() => {
-                     setProjectStatus('Work Commenced');
-                     setProjectActivity(prev => [
-                       ...prev,
-                       { time: '10:45 AM', text: 'Executive approved funding' },
-                       { time: '11:05 AM', text: 'Department notified' },
-                       { time: '11:10 AM', text: 'Project moved to Work Commenced' }
-                     ]);
-                     triggerAction('Project approved. Funds sanctioned successfully. Department notified.');
+                   <button onClick={async () => {
+                     try {
+                       await workflowService.approveComplaint(activeProjectId);
+                       await workflowService.assignDepartment(activeProjectId, 'PWD');
+                       await workflowService.startWork(activeProjectId);
+                       setProjectStatus('Work Commenced');
+                       setProjectActivity(prev => [
+                         ...prev,
+                         { time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), text: 'Executive approved funding' },
+                         { time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), text: 'Department notified' },
+                         { time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), text: 'Project moved to Work Commenced' }
+                       ]);
+                       triggerAction('Project approved. Funds sanctioned successfully. Department notified.');
+                     } catch (err) {
+                       triggerAction('Failed to approve project. Performing optimistic update.');
+                     }
                    }} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 font-bold rounded-xl shadow-md transition-colors">
                      Approve Project
                    </button>
@@ -1438,13 +1505,19 @@ const MPDashboard = () => {
                <button onClick={() => setActiveModal(null)} className="px-6 py-3 font-bold text-slate-600 hover:bg-slate-200 rounded-xl transition-colors">
                  Cancel
                </button>
-               <button onClick={() => {
-                 setProjectStatus('Manual Review');
-                 setProjectActivity(prev => [
-                   ...prev,
-                   { time: '10:45 AM', text: 'Project sent for manual verification.' }
-                 ]);
-                 triggerAction('Project sent for manual verification.');
+               <button onClick={async () => {
+                 try {
+                   // Optimistic UI updates
+                   setProjectStatus('Manual Review');
+                   setProjectActivity(prev => [
+                     ...prev,
+                     { time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), text: 'Project sent for manual verification.' }
+                   ]);
+                   triggerAction('Project sent for manual verification.');
+                   setActiveModal(null);
+                 } catch (err) {
+                   triggerAction('Failed to send for review.');
+                 }
                }} className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 font-bold rounded-xl shadow-md transition-colors">
                  Send for Review
                </button>

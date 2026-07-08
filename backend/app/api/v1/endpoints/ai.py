@@ -6,7 +6,11 @@ ai_engine_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../
 if ai_engine_path not in sys.path:
     sys.path.append(ai_engine_path)
 
-from fastapi import APIRouter, UploadFile, File
+from fastapi import APIRouter, UploadFile, File, Form, Depends
+from sqlalchemy.orm import Session
+from app.database.session import get_db
+from app.services.image_analysis import analyze_image_service
+from app.schemas.ai import ImageAnalysisResponse as AppImageAnalysisResponse
 from ai.schemas import (
     ComplaintAnalysisRequest, ComplaintAnalysisResponse,
     VoiceAnalysisRequest, VoiceAnalysisResponse,
@@ -15,7 +19,9 @@ from ai.schemas import (
     ImageAnalysisResponse, DuplicateCheckRequest, DuplicateCheckResponse,
     PriorityScoreRequest, PriorityScoreResponse,
     ProjectRecommendationRequest, ProjectRecommendationResponse,
-    ExplainRequest, ExplainResponse, MPInsightsResponse
+    ExplainRequest, ExplainResponse, MPInsightsResponse,
+    MorningBriefResponse, ChatRequest, ChatResponse,
+    FeedbackAnalysisRequest, FeedbackAnalysisResponse
 )
 from ai.gemini_client import gemini_client
 
@@ -65,13 +71,17 @@ def get_next_question(data: NextQuestionRequest):
     result = gemini_client.generate_next_question(data.complaint)
     return result
 
-@router.post("/analyze-image", response_model=ImageAnalysisResponse)
-async def analyze_image(file: UploadFile = File(...)):
+@router.post("/analyze-image", response_model=AppImageAnalysisResponse)
+async def analyze_image(
+    image: UploadFile = File(...),
+    citizen_id: str = Form(None),
+    complaint_id: str = Form(None),
+    db: Session = Depends(get_db)
+):
     """
     Analyzes an uploaded civic image for issues like potholes or garbage.
     """
-    image_bytes = await file.read()
-    result = gemini_client.analyze_image(image_bytes, file.content_type)
+    result = analyze_image_service(db, image, citizen_id, complaint_id)
     return result
 
 DUMMY_COMPLAINTS = [
@@ -139,4 +149,23 @@ def get_mp_insights():
     }
     
     result = gemini_client.generate_mp_insights(dummy_aggregated_data)
+    return result
+
+@router.get("/mp/morning-brief", response_model=MorningBriefResponse)
+def get_morning_brief():
+    """Returns the AI Morning Brief for the MP Dashboard."""
+    # Hardcoded dummy MP info based on prompt
+    result = gemini_client.generate_mp_morning_brief(constituency="Kota", mp_name="Om Birla")
+    return result
+
+@router.post("/mp/chat", response_model=ChatResponse)
+def chat_with_assistant(data: ChatRequest):
+    """Answers a dashboard-specific question."""
+    result = gemini_client.answer_mp_dashboard_question(data.message, data.constituency)
+    return result
+
+@router.post("/analyze-feedback", response_model=FeedbackAnalysisResponse)
+def analyze_feedback(data: FeedbackAnalysisRequest):
+    """Analyzes citizen feedback for sentiment and urgency."""
+    result = gemini_client.analyze_feedback(data.comment, data.rating, data.satisfaction_status)
     return result

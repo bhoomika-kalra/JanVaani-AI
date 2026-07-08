@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import {
-  MessageSquare, MapPin, ChevronDown, Bell, Mic, Camera,
-  AlertTriangle, ClipboardList, ArrowRight, Droplets, Zap,
-  Activity, ShieldAlert, CheckCircle2, FolderOpen, Users,
-  MoreHorizontal, X, Crosshair, Map, ThumbsUp, Award
-} from 'lucide-react';
+import { Search, MapPin, CheckCircle2, ChevronDown, Bell, Zap, Droplets, ShieldAlert, Activity, Filter, Layers, MessageSquare, ThumbsUp, Map, Briefcase, Plus, FileText, ChevronRight, Share2, PlaySquare } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import logo from '../assets/logo.svg';
+import { citizenService } from '../services/citizenService';
+import { communityService } from '../services/communityService';
+import { supportService } from '../services/supportService';
 import MapWrapper from '../components/maps/MapWrapper';
 import ComplaintMarker from '../components/maps/ComplaintMarker';
 import UserLocationMarker from '../components/maps/UserLocationMarker';
@@ -21,13 +19,14 @@ const CitizenHome = () => {
   const [showLocationPermission, setShowLocationPermission] = useState(true);
   const [mapLocation, setMapLocation] = useState([25.18, 75.83]);
   const [nearbyIssues, setNearbyIssues] = useState([]);
+  const [citizenProfile, setCitizenProfile] = useState(null);
+  const [liveUpdates, setLiveUpdates] = useState([]);
+  const [dashboardStats, setDashboardStats] = useState({ active: 245, resolved: 180, ongoing: 24, helped: '12.5K' });
 
   useEffect(() => {
     const fetchMapData = async () => {
       const location = await getCitizenLocation();
       setMapLocation(location);
-      const issues = await getNearbyCommunityIssues(location);
-      setNearbyIssues(issues);
     };
     fetchMapData();
   }, []);
@@ -41,17 +40,26 @@ const CitizenHome = () => {
   const [showMapModal, setShowMapModal] = useState(false);
 
   useEffect(() => {
-    // Read from localStorage
-    const savedProfile = localStorage.getItem('janvaani_citizen_profile');
-    if (savedProfile) {
-      try {
-        const parsed = JSON.parse(savedProfile);
-        if (parsed.villageCity) setUserLocation(parsed.villageCity);
-        if (parsed.state) setUserState(parsed.state);
-      } catch (e) {
-        console.error("Error parsing profile", e);
+    const loadProfileAndStats = async () => {
+      const profile = await citizenService.getProfile();
+      if (profile) {
+        setCitizenProfile(profile);
+        if (profile.city_or_village) setUserLocation(profile.city_or_village);
+        if (profile.state) setUserState(profile.state);
+        if (profile.latitude && profile.longitude) setMapLocation([profile.latitude, profile.longitude]);
       }
-    }
+      
+      const myComplaints = await citizenService.getMyComplaints();
+      const supported = await citizenService.getSupportedIssues();
+      
+      setDashboardStats({
+        active: myComplaints.filter(c => c.status !== 'resolved' && c.status !== 'completed').length || 0,
+        resolved: myComplaints.filter(c => c.status === 'resolved' || c.status === 'completed').length || 0,
+        ongoing: supported.length || 0,
+        helped: 'N/A' // Could be sum of supporters on supported issues
+      });
+    };
+    loadProfileAndStats();
   }, []);
 
   const [activeCategory, setActiveCategory] = useState('All');
@@ -61,10 +69,26 @@ const CitizenHome = () => {
     setIsLocationModalOpen(true);
   };
 
-  const handleSaveLocation = () => {
+  const handleSaveLocation = async () => {
     if (tempLocation.city) setUserLocation(tempLocation.city);
     if (tempLocation.state) setUserState(tempLocation.state);
     setIsLocationModalOpen(false);
+    
+    // Save to backend
+    await citizenService.updateProfile({
+      state: tempLocation.state,
+      city_or_village: tempLocation.city,
+      pincode: tempLocation.pincode
+    });
+    
+    localStorage.setItem('janvaani_current_location', JSON.stringify({
+      state: tempLocation.state,
+      city: tempLocation.city
+    }));
+    
+    setToastMsg("Location updated successfully.");
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 3000);
   };
 
   const handleUseCurrentLocation = () => {
@@ -108,66 +132,72 @@ const CitizenHome = () => {
     }
   };
 
-  const [issuesState, setIssuesState] = useState([
-    {
-      id: 1,
-      title: "Severe Waterlogging on Main Road",
-      location: userLocation,
-      category: "Water",
-      icon: <Droplets size={16} className="text-white" />,
-      iconBg: "bg-blue-500",
-      image: "https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?w=500&q=80",
-      support: 243,
-      status: "IN PROGRESS",
-      statusColor: "text-blue-600 bg-white",
-      aiPriority: 88,
-      distance: "0.8 km",
-      isSupported: false
-    },
-    {
-      id: 2,
-      title: "Transformer Sparking Repeatedly",
-      location: userLocation,
-      category: "Electricity",
-      icon: <Zap size={16} className="text-white" />,
-      iconBg: "bg-orange-500",
-      image: "https://images.unsplash.com/photo-1544724569-5f546fd6f2b5?w=500&q=80",
-      support: 189,
-      status: "ASSIGNED",
-      statusColor: "text-orange-500 bg-white",
-      aiPriority: 95,
-      distance: "1.2 km",
-      isSupported: false
-    },
-    {
-      id: 3,
-      title: "Garbage Dump Overflowing",
-      location: userLocation,
-      category: "Sanitation",
-      icon: <ShieldAlert size={16} className="text-white" />,
-      iconBg: "bg-red-500",
-      image: "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=500&q=80",
-      support: 156,
-      status: "OPEN",
-      statusColor: "text-red-500 bg-white",
-      aiPriority: 85,
-      distance: "2.5 km",
-      isSupported: false
-    },
-  ]);
+  const [issuesState, setIssuesState] = useState([]);
+  const [isLoadingNearby, setIsLoadingNearby] = useState(true);
 
-  const handleSupport = (id) => {
-    setIssuesState(prev => prev.map(issue => {
-      if (issue.id === id) {
-        if (!issue.isSupported) {
-          setShowToast(true);
-          setToastMsg("Thanks for your support! Upvote registered.");
-          setTimeout(() => setShowToast(false), 3000);
-          return { ...issue, support: issue.support + 1, isSupported: true };
-        }
+  useEffect(() => {
+    const fetchNearby = async () => {
+      if (!userLocation) return;
+      try {
+        setIsLoadingNearby(true);
+        const data = await communityService.getNearbyComplaints({ state: userState, city_or_village: userLocation });
+        
+        // Map to format required by UI
+        const mappedIssues = data.map(c => ({
+          id: c.id,
+          title: c.title,
+          location: c.city_or_village || c.address || 'Unknown',
+          category: c.category || "Other",
+          icon: <ShieldAlert size={16} className="text-white" />,
+          iconBg: c.iconBg || "bg-blue-500",
+          support: c.supporters || 0,
+          status: c.status,
+          statusColor: c.statusColor || (c.status === 'completed' ? 'text-green-500 bg-green-50' : 'text-blue-500 bg-blue-50'),
+          aiPriority: c.priority_score || 60,
+          distance: c.distance || "0.5 km",
+          isSupported: c.isSupported || false,
+          image: c.image || "https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?w=500&q=80"
+        }));
+        
+        setIssuesState(mappedIssues.slice(0, 3)); // Display maximum 3
+        setNearbyIssues(mappedIssues);
+        
+        const updates = await communityService.getLiveUpdates(userLocation);
+        setLiveUpdates(updates);
+      } catch (err) {
+        console.error("Failed to load nearby complaints", err);
+      } finally {
+        setIsLoadingNearby(false);
       }
-      return issue;
-    }));
+    };
+    fetchNearby();
+    
+    // Polling every 30 seconds for real-time updates
+    const interval = setInterval(fetchNearby, 30000);
+    return () => clearInterval(interval);
+  }, [userLocation, userState]);
+
+  const handleSupport = async (id) => {
+    try {
+      await supportService.supportComplaint(id);
+      
+      setIssuesState(prev => prev.map(issue => {
+        if (issue.id === id) {
+          if (!issue.isSupported) {
+            setShowToast(true);
+            setToastMsg("Thanks for your support! Upvote registered.");
+            setTimeout(() => setShowToast(false), 3000);
+            return { ...issue, support: issue.support + 1, isSupported: true };
+          }
+        }
+        return issue;
+      }));
+    } catch (err) {
+      console.error(err);
+      setToastMsg("Failed to support complaint.");
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+    }
   };
 
   const categories = [
@@ -239,7 +269,7 @@ const CitizenHome = () => {
 
               <div className="xl:w-1/3">
                 <h1 className="text-3xl lg:text-4xl font-bold text-slate-900 leading-[1.15] mb-4">
-                  Welcome Back,<br />Citizen! <span className="text-3xl"></span>
+                  Welcome Back,<br />{citizenProfile ? citizenProfile.full_name : 'Citizen'}! <span className="text-3xl"></span>
                 </h1>
                 <p className="text-slate-500 text-sm font-medium leading-relaxed max-w-sm">
                   Your voice helps build a better and stronger community.
@@ -391,57 +421,63 @@ const CitizenHome = () => {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {filteredIssues.map((issue) => (
-                  <div key={issue.id} className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden group hover:shadow-md transition-shadow flex flex-col">
+                {isLoadingNearby ? (
+                  <div className="col-span-full py-10 flex justify-center"><div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div></div>
+                ) : filteredIssues.length === 0 ? (
+                  <div className="col-span-full py-10 text-center text-slate-500 font-medium">No complaints found nearby.</div>
+                ) : (
+                  filteredIssues.map((issue) => (
+                    <div key={issue.id} className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden group hover:shadow-md transition-shadow flex flex-col">
 
-                    {/* IMAGE HEADER */}
-                    <div className="relative h-44 w-full">
-                      <img src={issue.image} alt={issue.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                      {/* IMAGE HEADER */}
+                      <div className="relative h-44 w-full bg-slate-100 flex items-center justify-center">
+                        <img src={issue.image} alt={issue.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
 
-                      {/* Overlays */}
-                      <span className={`absolute top-4 left-4 ${issue.statusColor} text-[10px] font-bold px-2.5 py-1 rounded shadow-sm tracking-wide`}>
-                        {issue.status}
-                      </span>
+                        {/* Overlays */}
+                        <span className={`absolute top-4 left-4 ${issue.statusColor} text-[10px] font-bold px-2.5 py-1 rounded shadow-sm tracking-wide capitalize`}>
+                          {issue.status}
+                        </span>
 
-                      <span className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm text-slate-800 text-[10px] font-bold px-2.5 py-1 rounded flex items-center gap-1 shadow-sm tracking-wide">
-                        AI SCORE <span className="text-sm font-black leading-none ml-1">{issue.aiPriority}</span>
-                      </span>
+                        <span className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm text-slate-800 text-[10px] font-bold px-2.5 py-1 rounded flex items-center gap-1 shadow-sm tracking-wide">
+                          AI SCORE <span className="text-sm font-black leading-none ml-1">{issue.aiPriority}</span>
+                        </span>
 
-                      {/* Overlapping Icon */}
-                      <div className={`absolute -bottom-5 left-5 w-12 h-12 rounded-full border-4 border-white flex items-center justify-center shadow-sm ${issue.iconBg}`}>
-                        {issue.icon}
-                      </div>
-                    </div>
-
-                    {/* TEXT CONTENT */}
-                    <div className="pt-8 px-6 pb-6 flex flex-col flex-1">
-                      <h3 className="text-[15px] font-bold text-slate-900 leading-tight mb-4">{issue.title}</h3>
-
-                      <div className="flex flex-col gap-2 mb-6">
-                        <div className="flex items-center gap-2 text-sm text-slate-500 font-medium">
-                          <MapPin size={14} /> {userLocation}
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-slate-500 font-medium">
-                          <Activity size={14} /> {issue.distance} from you
+                        {/* Overlapping Icon */}
+                        <div className={`absolute -bottom-5 left-5 w-12 h-12 rounded-full border-4 border-white flex items-center justify-center shadow-sm ${issue.iconBg}`}>
+                          {issue.icon}
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 text-sm text-slate-500 font-medium mb-6 mt-auto">
-                        <Users size={16} /> {issue.support} citizens support this
-                      </div>
+                      {/* TEXT CONTENT */}
+                      <div className="pt-8 px-6 pb-6 flex flex-col flex-1">
+                        <h3 className="text-[15px] font-bold text-slate-900 leading-tight mb-4">{issue.title}</h3>
 
-                      {/* BUTTONS */}
-                      <div className="grid grid-cols-1 gap-3">
-                        <button 
-                          onClick={() => handleSupport(issue.id)}
-                          className={`${issue.isSupported ? 'bg-green-500 hover:bg-green-600' : 'bg-blue-500 hover:bg-blue-600'} text-white py-2.5 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2`}
-                        >
-                          {issue.isSupported ? <CheckCircle2 size={14} /> : <ThumbsUp size={14} />} {issue.isSupported ? 'Supported' : 'Support'}
-                        </button>
+                        <div className="flex flex-col gap-2 mb-6">
+                          <div className="flex items-center gap-2 text-sm text-slate-500 font-medium">
+                            <MapPin size={14} /> {issue.location}
+                          </div>
+                          <div className="flex items-center gap-2 text-sm text-slate-500 font-medium">
+                            <Activity size={14} /> {issue.distance} from you
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 text-sm text-slate-500 font-medium mb-6 mt-auto">
+                          <Users size={16} /> {issue.support} citizens support this
+                        </div>
+
+                        {/* BUTTONS */}
+                        <div className="grid grid-cols-1 gap-3">
+                          <button 
+                            onClick={() => handleSupport(issue.id)}
+                            className={`${issue.isSupported ? 'bg-green-500 hover:bg-green-600' : 'bg-blue-500 hover:bg-blue-600'} text-white py-2.5 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2`}
+                          >
+                            {issue.isSupported ? <CheckCircle2 size={14} /> : <ThumbsUp size={14} />} {issue.isSupported ? 'Supported' : 'Support'}
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
 
               <div className="mt-8 text-center flex justify-center">
@@ -471,7 +507,7 @@ const CitizenHome = () => {
                     <ClipboardList size={20} />
                   </div>
                   <div>
-                    <span className="block text-xl font-bold text-slate-900 leading-none mb-1">245</span>
+                    <span className="block text-xl font-bold text-slate-900 leading-none mb-1">{dashboardStats.active}</span>
                     <span className="text-[11px] font-medium text-slate-500">Active issues</span>
                   </div>
                 </div>
@@ -481,28 +517,28 @@ const CitizenHome = () => {
                     <CheckCircle2 size={20} />
                   </div>
                   <div>
-                    <span className="block text-xl font-bold text-slate-900 leading-none mb-1">180</span>
+                    <span className="block text-xl font-bold text-slate-900 leading-none mb-1">{dashboardStats.resolved}</span>
                     <span className="text-[11px] font-medium text-slate-500">Resolved</span>
                   </div>
                 </div>
 
                 <div className="bg-white p-5 rounded-[1.25rem] border border-slate-200 shadow-sm flex items-center gap-4 hover:-translate-y-1 transition-transform">
                   <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center shrink-0">
-                    <FolderOpen size={20} />
+                    <Layers size={20} />
                   </div>
                   <div>
-                    <span className="block text-xl font-bold text-slate-900 leading-none mb-1">24</span>
-                    <span className="text-[11px] font-medium text-slate-500">Ongoing Projects</span>
+                    <span className="block text-xl font-bold text-slate-900 leading-none mb-1">{dashboardStats.ongoing}</span>
+                    <span className="text-[11px] font-medium text-slate-500">Supported Issues</span>
                   </div>
                 </div>
 
                 <div className="bg-white p-5 rounded-[1.25rem] border border-slate-200 shadow-sm flex items-center gap-4 hover:-translate-y-1 transition-transform">
                   <div className="w-12 h-12 rounded-full bg-fuchsia-50 text-fuchsia-500 flex items-center justify-center shrink-0">
-                    <Users size={20} />
+                    <Map size={20} />
                   </div>
                   <div>
-                    <span className="block text-xl font-bold text-slate-900 leading-none mb-1">12.5K</span>
-                    <span className="text-[11px] font-medium text-slate-500">Citizens Helped</span>
+                    <span className="block text-xl font-bold text-slate-900 leading-none mb-1">{nearbyIssues.length}</span>
+                    <span className="text-[11px] font-medium text-slate-500">Nearby Issues</span>
                   </div>
                 </div>
 
@@ -518,20 +554,20 @@ const CitizenHome = () => {
               <div className="bg-white p-6 rounded-[1.5rem] border border-slate-200 shadow-sm">
                 <div className="space-y-6 relative before:absolute before:inset-0 before:ml-[11px] before:h-full before:w-[2px] before:bg-slate-100 pl-1">
 
-                  {recentUpdates.map((update, idx) => (
+                  {liveUpdates.map((update, idx) => (
                     <div key={update.id} className="relative flex items-start gap-5">
-                      <div className={`relative z-10 shrink-0 w-6 h-6 rounded-full flex items-center justify-center border-4 border-white ${update.color === 'green' ? 'bg-green-100 text-green-500' : 'bg-blue-100 text-blue-500'}`}>
-                        {update.color === 'green' ? <CheckCircle2 size={10} /> : <div className="w-2 h-2 rounded-full bg-blue-500"></div>}
+                      <div className={`relative z-10 shrink-0 w-6 h-6 rounded-full flex items-center justify-center border-4 border-white ${update.status === 'Completed' ? 'bg-green-100 text-green-500' : 'bg-blue-100 text-blue-500'}`}>
+                        {update.status === 'Completed' ? <CheckCircle2 size={10} /> : <div className="w-2 h-2 rounded-full bg-blue-500"></div>}
                       </div>
                       <div className="flex flex-col pt-0.5 w-full">
                         <div className="flex justify-between items-start mb-1">
                           <h4 className="font-bold text-[13px] text-slate-900 pr-2">{update.title}</h4>
-                          <span className={`text-[9px] font-bold px-2 py-0.5 rounded uppercase tracking-wider ${update.color === 'green' ? 'bg-green-50 text-green-600' : 'bg-blue-50 text-blue-600'}`}>{update.status}</span>
+                          <span className={`text-[9px] font-bold px-2 py-0.5 rounded uppercase tracking-wider ${update.status === 'Completed' ? 'bg-green-50 text-green-600' : 'bg-blue-50 text-blue-600'}`}>{update.status}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-[11px] font-medium text-slate-400">{update.date}</span>
                           <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-                          <span className="text-[11px] font-medium text-slate-400">{update.dept}</span>
+                          <span className="text-[11px] font-medium text-slate-400">{update.category}</span>
                         </div>
                       </div>
                     </div>

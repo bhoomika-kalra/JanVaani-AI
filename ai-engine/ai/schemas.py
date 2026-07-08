@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import List
+from typing import List, Optional
 
 class ComplaintAnalysisRequest(BaseModel):
     complaint: str
@@ -119,3 +119,36 @@ class MPInsightsResponse(BaseModel):
     risk_alerts: List[str] = Field(description="Critical warnings the MP must know about immediately")
     budget_recommendations: List[str] = Field(description="Where funds should be allocated")
     next_month_predictions: List[str] = Field(description="What to expect in the coming 30 days")
+
+class MorningBriefResponse(BaseModel):
+    mp_name: str = Field(description="Name of the MP")
+    constituency: str = Field(description="Constituency name")
+    title: str = Field(description="Title of the brief")
+    bullets: List[str] = Field(description="Summary bullets")
+    estimated_impact: str = Field(description="Estimated impact metric")
+    priority: str = Field(description="Priority label")
+    generated_at: str = Field(description="Generation time")
+
+class ChatRequest(BaseModel):
+    message: str = Field(description="The user's question")
+    constituency: str = Field(description="Constituency name")
+
+class ChatRelatedMetrics(BaseModel):
+    ward: Optional[str] = None
+    priority_score: Optional[int] = None
+    citizens_affected: Optional[int] = None
+
+class ChatResponse(BaseModel):
+    answer: str = Field(description="Conversational answer to the MP")
+    related_metrics: ChatRelatedMetrics = Field(default_factory=ChatRelatedMetrics)
+
+class FeedbackAnalysisRequest(BaseModel):
+    comment: str
+    rating: int
+    satisfaction_status: str
+
+class FeedbackAnalysisResponse(BaseModel):
+    sentiment: str = Field(description="Positive, Neutral, or Negative")
+    urgency: str = Field(description="Low, Medium, or High")
+    summary: str = Field(description="One sentence summary of the feedback")
+    should_reopen: bool = Field(description="Whether the complaint should be reopened")

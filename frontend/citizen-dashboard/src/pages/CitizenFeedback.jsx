@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ArrowLeft, Upload, Star, CheckCircle2, MessageSquare } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import logo from '../assets/logo.svg';
+import { aiService } from '../services/aiService';
 
 const CitizenFeedback = () => {
   const navigate = useNavigate();
@@ -11,9 +12,21 @@ const CitizenFeedback = () => {
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [feedbackResult, setFeedbackResult] = useState(null);
+
   const handleSubmit = async () => {
-    // In a real app, we would POST to /api/v1/feedback here
-    setStep(2); // Success state
+    setIsSubmitting(true);
+    try {
+      const data = await aiService.analyzeFeedback({ comment, rating, satisfaction_status: satisfaction });
+      setFeedbackResult(data);
+      setStep(2); // Success state
+    } catch (error) {
+      console.error(error);
+      setStep(2);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -110,10 +123,10 @@ const CitizenFeedback = () => {
 
               <button 
                 onClick={handleSubmit}
-                disabled={!complaintId || !satisfaction || !rating}
+                disabled={!complaintId || !satisfaction || !rating || isSubmitting}
                 className="w-full bg-blue-600 text-white font-bold py-4 rounded-xl shadow-md transition-colors hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Submit Feedback
+                {isSubmitting ? 'Submitting...' : 'Submit Feedback'}
               </button>
             </div>
           </section>
@@ -124,6 +137,13 @@ const CitizenFeedback = () => {
             </div>
             <h2 className="text-2xl font-black text-slate-900 mb-3">Thank you for your feedback!</h2>
             <p className="text-slate-500 font-medium mb-8">Your response will help improve public services.</p>
+            
+            {feedbackResult && feedbackResult.should_reopen && (
+              <div className="bg-orange-50 border border-orange-200 text-orange-800 p-4 rounded-xl mb-8 w-full">
+                <p className="text-sm font-bold">Your feedback has been flagged for review.</p>
+                <p className="text-xs mt-1 text-orange-700">Due to your dissatisfaction, we have reopened this issue for the MP's attention.</p>
+              </div>
+            )}
             <button onClick={() => navigate('/citizen')} className="bg-slate-900 text-white font-bold py-3.5 px-8 rounded-xl shadow-md transition-colors hover:bg-slate-800">
               Return to Dashboard
             </button>

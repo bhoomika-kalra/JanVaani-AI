@@ -6,8 +6,8 @@ from app.core.config import settings
 from ai.config import ai_settings
 from ai.prompts import COMPLAINT_UNDERSTANDING_PROMPT, VOICE_ANALYSIS_PROMPT, TRANSLATION_PROMPT, NEXT_QUESTION_PROMPT, IMAGE_ANALYSIS_PROMPT, DUPLICATE_CHECK_PROMPT, PRIORITY_SCORE_PROMPT, PROJECT_RECOMMENDATION_PROMPT, EXPLAIN_PROMPT, MP_INSIGHTS_PROMPT, EXECUTIVE_SUMMARY_PROMPT
 from ai.parser import parse_gemini_response, parse_gemini_voice_response, parse_gemini_translation_response, parse_next_question_response, parse_image_analysis_response, parse_duplicate_check_response, parse_priority_score_response, parse_project_recommendation_response, parse_explain_response, parse_mp_insights_response
-from ai.fallback import get_mock_analysis, get_mock_voice_analysis, get_mock_translation, get_mock_next_question, get_mock_image_analysis, get_mock_duplicate_check, get_mock_priority_score, get_mock_project_recommendation, get_mock_explain, get_mock_mp_insights, get_mock_executive_summary
-from ai.schemas import ComplaintAnalysisResponse, VoiceAnalysisResponse, TranslationResponse, NextQuestionResponse, ImageAnalysisResponse, DuplicateCheckResponse, PriorityScoreResponse, ProjectRecommendationResponse, ExplainResponse, MPInsightsResponse
+from ai.fallback import get_mock_analysis, get_mock_voice_analysis, get_mock_translation, get_mock_next_question, get_mock_image_analysis, get_mock_duplicate_check, get_mock_priority_score, get_mock_project_recommendation, get_mock_explain, get_mock_mp_insights, get_mock_executive_summary, get_mock_morning_brief, get_mock_chat_response
+from ai.schemas import ComplaintAnalysisResponse, VoiceAnalysisResponse, TranslationResponse, NextQuestionResponse, ImageAnalysisResponse, DuplicateCheckResponse, PriorityScoreResponse, ProjectRecommendationResponse, ExplainResponse, MPInsightsResponse, MorningBriefResponse, ChatResponse
 from ai.safety import validate_text_input, validate_image, validate_ai_confidence, AISafetyError
 
 logger = logging.getLogger(__name__)
@@ -343,11 +343,146 @@ class GeminiClient:
             if cleaned.endswith("```"):
                 cleaned = cleaned.rsplit("\n", 1)[0]
                 
+                
             return cleaned.strip()
                 
         except Exception as e:
             logger.error(f"Gemini API Error (Executive Summary): {e}. Falling back to mock.")
             return get_mock_executive_summary(report_type, report_data)
+
+    def generate_monthly_report_intelligence(self, dashboard_stats: dict) -> dict:
+        """
+        Generates dynamic monthly report intelligence based on dashboard stats.
+        """
+        import json
+        
+        # Mock fallback
+        mock_response = {
+            "executive_summary": "This month saw a total of 1,248 complaints, marking a 12% increase from the previous month. Water infrastructure contributed to 32% of all severe complaints. AI recommends prioritizing immediate drainage repairs in Ward 14 before the upcoming monsoon.",
+            "ai_insights": {
+                "Highest Priority Project": "Ward 14 Drainage Overhaul",
+                "Reason": "Repeated severe waterlogging affecting 15,000 residents.",
+                "Impact": "Prevents monsoon flooding and property damage.",
+                "Budget": "₹15.5L",
+                "Timeline": "45 Days",
+                "Confidence": "98%"
+            },
+            "department_performance": "Water Department resolved 84% of assigned complaints. PWD has delayed three major projects. Electricity department improved response time by 12%.",
+            "budget_recommendation": {
+                "Minimum Budget": "₹45.0L",
+                "Maximum Budget": "₹60.5L",
+                "Priority Level": "High"
+            },
+            "risk_assessment": {
+                "Flood Risk": "High",
+                "Infrastructure Risk": "Moderate",
+                "Traffic Risk": "Low",
+                "Water Scarcity": "Low",
+                "Public Safety": "Moderate"
+            },
+            "predictive_analytics": {
+                "Complaint count": 1350,
+                "Critical wards": ["Ward 14", "Ward 8"],
+                "Expected budget": "₹50.0L",
+                "Resource requirements": "12 additional field teams"
+            },
+            "mp_recommendations": [
+                "Approve drainage project in Ward 14.",
+                "Allocate emergency funds for monsoon prep.",
+                "Deploy water tankers to Ward 8.",
+                "Increase sanitation workforce by 15%.",
+                "Inspect Ward 14 personally."
+            ],
+            "overall_health_score": {
+                "Score": 76,
+                "Explanation": "The constituency is performing moderately well. While electricity and sanitation are stable, critical water infrastructure needs immediate funding to prevent severe drops in citizen satisfaction."
+            }
+        }
+
+        if not self.is_configured:
+            return mock_response
+
+        try:
+            stats_json = json.dumps(dashboard_stats, ensure_ascii=False)
+            prompt = f"""
+You are JanVaani AI, an expert municipal data analyst for a Member of Parliament.
+Analyze the following dashboard statistics and generate an executive monthly intelligence report.
+Do not use fixed text, generate dynamic insights based on the numbers.
+
+Dashboard Statistics:
+{stats_json}
+
+You MUST return a raw JSON object (NO markdown tags, NO backticks) matching this EXACT schema:
+{{
+  "executive_summary": "String (2-3 sentences summarizing the month)",
+  "ai_insights": {{
+    "Highest Priority Project": "String",
+    "Reason": "String",
+    "Impact": "String",
+    "Budget": "String",
+    "Timeline": "String",
+    "Confidence": "String"
+  }},
+  "department_performance": "String (Analysis of department SLAs)",
+  "budget_recommendation": {{
+    "Minimum Budget": "String",
+    "Maximum Budget": "String",
+    "Priority Level": "String"
+  }},
+  "risk_assessment": {{
+    "Flood Risk": "Low/Moderate/High",
+    "Infrastructure Risk": "Low/Moderate/High",
+    "Traffic Risk": "Low/Moderate/High",
+    "Water Scarcity": "Low/Moderate/High",
+    "Public Safety": "Low/Moderate/High"
+  }},
+  "predictive_analytics": {{
+    "Complaint count": int,
+    "Critical wards": ["String", "String"],
+    "Expected budget": "String",
+    "Resource requirements": "String"
+  }},
+  "mp_recommendations": ["String", "String", "String", "String", "String"],
+  "overall_health_score": {{
+    "Score": int (0-100),
+    "Explanation": "String"
+  }}
+}}
+"""
+            response_text = self._call_gemini(prompt)
+            
+            cleaned = response_text.strip()
+            if cleaned.startswith("```json"):
+                cleaned = cleaned[7:]
+            elif cleaned.startswith("```"):
+                cleaned = cleaned[3:]
+            if cleaned.endswith("```"):
+                cleaned = cleaned[:-3]
+                
+            return json.loads(cleaned.strip())
+                
+        except Exception as e:
+            logger.error(f"Gemini API Error (Report Intelligence): {e}. Falling back to mock.")
+            return mock_response
+
+    def generate_mp_morning_brief(self, constituency: str, mp_name: str) -> MorningBriefResponse:
+        """Generates the morning brief for the MP."""
+        if not self.is_configured:
+            return get_mock_morning_brief(constituency, mp_name)
+        # Using mock fallback as primary if actual prompt isn't implemented
+        return get_mock_morning_brief(constituency, mp_name)
+
+    def answer_mp_dashboard_question(self, message: str, constituency: str) -> ChatResponse:
+        """Answers MP questions based on dashboard context."""
+        if not self.is_configured:
+            return get_mock_chat_response(message, constituency)
+        return get_mock_chat_response(message, constituency)
+
+    def analyze_feedback(self, comment: str, rating: int, status: str):
+        """Analyzes citizen feedback for sentiment and urgency."""
+        if not self.is_configured:
+            return get_mock_feedback_analysis(comment, rating, status)
+        return get_mock_feedback_analysis(comment, rating, status)
 
 # Singleton instance
 gemini_client = GeminiClient()

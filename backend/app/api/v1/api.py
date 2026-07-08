@@ -1,5 +1,6 @@
 from fastapi import APIRouter
-from app.api.v1.endpoints import db_test, citizens, complaints, ai, mp, mp_dashboard, workflow, notifications, reports, transparency
+from app.api.v1.endpoints import db_test, citizens, complaints, ai, mp, mp_dashboard, workflow, notifications, reports, transparency, feedback
+
 
 api_router = APIRouter()
 
@@ -14,3 +15,4 @@ api_router.include_router(notifications.router, prefix="/notifications", tags=["
 api_router.include_router(reports.router, prefix="/reports", tags=["Reports"])
 api_router.include_router(transparency.router, prefix="/transparency", tags=["Public Transparency"])
 api_router.include_router(reports.router, prefix="/ai/report", tags=["ai-reports"])
+api_router.include_router(feedback.router, prefix="/feedback", tags=["Feedback"])

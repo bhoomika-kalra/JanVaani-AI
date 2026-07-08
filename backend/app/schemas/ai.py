@@ -12,6 +12,21 @@ class AIAnalysisResponse(BaseModel):
     recommended_department: str
     estimated_citizens_affected: int
 
+class SingleIssueDetection(BaseModel):
+    name: str
+    confidence: float
+    severity: str
+
+class ImageAnalysisResponse(BaseModel):
+    primary_issue: str
+    secondary_issues: List[str]
+    overall_severity: str
+    overall_priority: str
+    departments: List[str]
+    issues: List[SingleIssueDetection]
+    summary: str
+    objects: List[str]
+
 class TextInput(BaseModel):
     text: str
 

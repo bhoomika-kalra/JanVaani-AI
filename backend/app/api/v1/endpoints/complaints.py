@@ -12,6 +12,7 @@ from app.models.citizen import Citizen
 from app.models.complaint import Complaint, ComplaintTimeline, ComplaintSupport, ComplaintMedia
 from app.models.notification_log import NotificationLog
 from app.schemas.complaint import ComplaintCreate, ComplaintResponse, TimelineResponse, SupportResponse, MediaResponse
+from app.services.notification.sms_service import send_sms
 
 router = APIRouter()
 
@@ -59,9 +60,28 @@ def create_complaint(
         message=f"Your complaint '{complaint.title}' has been registered with ID {complaint.complaint_uid}."
     )
     db.add(notification)
+    
+    # 4. Send SMS Notification
+    send_sms(
+        db=db, 
+        citizen_id=current_citizen.id, 
+        phone_number=current_citizen.phone_number, 
+        complaint_id=complaint.complaint_uid, 
+        event_type="Complaint Registered", 
+        category=data.department_id # using department as category proxy for now
+    )
+    
     db.commit()
     
     return complaint
+
+@router.get("/citizen/me", response_model=List[ComplaintResponse])
+def get_my_complaints(
+    db: Session = Depends(get_db),
+    current_citizen: Citizen = Depends(get_current_citizen)
+) -> Any:
+    complaints = db.query(Complaint).filter(Complaint.citizen_id == current_citizen.id).order_by(Complaint.created_at.desc()).all()
+    return complaints
 
 @router.get("/{complaint_id}", response_model=ComplaintResponse)
 def get_complaint(complaint_id: int, db: Session = Depends(get_db)) -> Any:

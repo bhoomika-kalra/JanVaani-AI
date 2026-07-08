@@ -1,9 +1,12 @@
-import React, { useState, useRef } from 'react';
-import { ArrowLeft, MapPin, Mic, BrainCircuit, ThumbsUp, Camera, Video, X, Play, Square, Crosshair, ArrowRight, UploadCloud, CheckCircle2, Sparkles, AlertTriangle, Edit2, Check } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { ArrowLeft, MapPin, Mic, BrainCircuit, ThumbsUp, Camera, Video, X, Play, Square, Crosshair, ArrowRight, UploadCloud, CheckCircle2, Sparkles, AlertTriangle, Edit2, Check, Copy } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import MapWrapper from '../components/maps/MapWrapper';
 import UserLocationMarker from '../components/maps/UserLocationMarker';
 import LocationPicker from '../components/maps/LocationPicker';
+import { complaintService } from '../services/complaintService';
+import { mediaService } from '../services/mediaService';
+import { aiService } from '../services/aiService';
 
 const categories = ["Road", "Water", "Electricity", "Healthcare", "Education", "Sanitation", "Environment", "Other"];
 
@@ -39,38 +42,83 @@ const SubmitComplaint = () => {
 
   const KOTA_CENTER = [25.18, 75.83];
 
+  const [isAnalyzingText, setIsAnalyzingText] = useState(false);
+  const [aiTextResult, setAiTextResult] = useState(null);
+  
+  const [isCheckingDuplicate, setIsCheckingDuplicate] = useState(false);
+  const [duplicateResult, setDuplicateResult] = useState(null);
+
+  const [aiSummary, setAiSummary] = useState({ priority: 'Normal', score: 50, summary: 'Pending AI Analysis' });
+
   const handleAnalyzeImage = async () => {
     if (!imageFile) return;
-    const file = imageFile;
-    
     setIsAnalyzing(true);
     
     try {
-      const formData = new FormData();
-      formData.append('image', file);
-      
-      const response = await fetch('http://localhost:8000/api/v1/ai/analyze-image', {
-        method: 'POST',
-        body: formData
+      const data = await aiService.analyzeImage(imageFile);
+      setAiResult({
+        primary_issue: data.primaryIssue,
+        secondary_issues: data.secondaryIssues,
+        overall_severity: data.overallSeverity,
+        overall_priority: data.overallPriority,
+        departments: data.departments,
+        summary: data.aiSummary
       });
-      
-      const data = await response.json();
-      setAiResult(data);
     } catch (error) {
       console.error("AI Analysis failed:", error);
-      setAiResult({
-        primary_issue: "Network Error",
-        overall_severity: "High",
-        overall_priority: "Normal",
-        departments: [],
-        issues: [],
-        secondary_issues: [],
-        summary: "Failed to connect to AI service. Please classify manually."
-      });
     } finally {
       setIsAnalyzing(false);
     }
   };
+
+  const handleAnalyzeText = async () => {
+    if (!description.trim()) return;
+    setIsAnalyzingText(true);
+    try {
+      const data = await aiService.analyzeComplaintText({ description, location });
+      setAiTextResult(data);
+      setSelectedCategory(data.category || selectedCategory);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsAnalyzingText(false);
+      handleCheckDuplicate();
+    }
+  };
+
+  const handleCheckDuplicate = async () => {
+    if (!description.trim()) return;
+    setIsCheckingDuplicate(true);
+    try {
+      const data = await aiService.checkDuplicateComplaint({ text: description, location });
+      if (data && data.isDuplicate) {
+        setDuplicateResult(data);
+      } else {
+        setDuplicateResult(null);
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsCheckingDuplicate(false);
+    }
+  };
+
+  useEffect(() => {
+    // Debounced or simple update for AI Summary Card
+    const fetchSummary = async () => {
+      if (description.length > 20) {
+        const data = await aiService.calculatePriorityScore({ description, category: selectedCategory, location });
+        const summaryData = await aiService.generateExplainability({ description, category: selectedCategory, location });
+        setAiSummary({
+          priority: data.priority_label || 'Normal',
+          score: data.priority_score || 50,
+          summary: summaryData.mainReason || 'Complaint text analyzed.'
+        });
+      }
+    };
+    const timer = setTimeout(fetchSummary, 2000);
+    return () => clearTimeout(timer);
+  }, [description, selectedCategory, location]);
 
   const applyAiSuggestion = () => {
     setSelectedCategory(aiResult.primary_issue || "Other");
@@ -118,16 +166,41 @@ const SubmitComplaint = () => {
     }
   };
 
-  const handleSubmit = () => {
-    const payload = {
-      category: selectedCategory,
-      description,
-      location,
-      latitude: coordinates ? coordinates[0] : null,
-      longitude: coordinates ? coordinates[1] : null
-    };
-    console.log("Submitting complaint data:", payload);
-    navigate('/complaint-registered');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async () => {
+    if (!description.trim() || !location.trim()) {
+      alert("Description and location are required.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const payload = {
+        title: `${selectedCategory} Issue at ${location}`,
+        category: selectedCategory,
+        description,
+        location,
+        city_or_village: location,
+        state: "Rajasthan",
+        latitude: coordinates ? coordinates[0] : null,
+        longitude: coordinates ? coordinates[1] : null
+      };
+
+      const complaint = await complaintService.createComplaint(payload);
+      
+      if (imageFile) {
+        await mediaService.uploadMedia(complaint.id, imageFile, 'image');
+      }
+      
+      localStorage.setItem('last_complaint_id', complaint.id);
+      navigate('/complaint-registered');
+    } catch (err) {
+      console.error(err);
+      alert("Unable to submit complaint. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -173,7 +246,17 @@ const SubmitComplaint = () => {
 
         {/* Complaint Description */}
         <section>
-          <h2 className="text-sm font-bold text-slate-800 mb-3 px-1 uppercase tracking-wider">2. Describe the Issue</h2>
+          <div className="flex justify-between items-center mb-3 px-1">
+            <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wider">2. Describe the Issue</h2>
+            <button 
+              onClick={handleAnalyzeText} 
+              disabled={isAnalyzingText || !description}
+              className="text-xs bg-blue-100 text-blue-700 px-3 py-1.5 rounded-full font-bold flex items-center gap-1 hover:bg-blue-200 transition-colors disabled:opacity-50"
+            >
+              <BrainCircuit size={14} />
+              {isAnalyzingText ? 'Analyzing...' : 'Analyze with JanVaani AI'}
+            </button>
+          </div>
           <div className="bg-white rounded-3xl p-1 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200 focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-100 transition-all">
             <textarea 
               value={description}
@@ -182,6 +265,58 @@ const SubmitComplaint = () => {
               className="w-full h-32 bg-transparent p-5 rounded-[1.3rem] outline-none text-slate-800 resize-none placeholder:text-slate-400"
             />
           </div>
+          
+          {aiTextResult && (
+            <div className="mt-4 bg-blue-50 border border-blue-200 rounded-2xl p-4 animate-in fade-in">
+              <h3 className="text-sm font-bold text-blue-900 mb-2 flex items-center gap-2"><Sparkles size={16}/> AI Suggestions</h3>
+              <p className="text-sm text-blue-800 mb-3">{aiTextResult.summary}</p>
+              <button 
+                onClick={() => {
+                  setDescription(aiTextResult.summary);
+                  setSelectedCategory(aiTextResult.category);
+                  setAiTextResult(null);
+                }}
+                className="bg-blue-600 text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-blue-700"
+              >
+                Use AI Suggestions
+              </button>
+            </div>
+          )}
+
+          {isCheckingDuplicate && (
+            <div className="mt-4 text-sm text-slate-500 flex items-center gap-2">
+              <div className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></div>
+              Checking for duplicates...
+            </div>
+          )}
+
+          {duplicateResult && duplicateResult.isDuplicate && (
+            <div className="mt-4 bg-orange-50 border border-orange-200 rounded-2xl p-4 animate-in fade-in">
+              <h3 className="text-sm font-bold text-orange-900 mb-2 flex items-center gap-2"><Copy size={16}/> Similar complaint found nearby</h3>
+              <div className="bg-white p-3 rounded-xl border border-orange-100 mb-3">
+                <p className="text-sm font-bold text-slate-800">{duplicateResult.similarComplaints[0]?.title || 'Similar Issue'}</p>
+                <p className="text-xs text-slate-500">{duplicateResult.similarComplaints[0]?.address || 'Nearby'}</p>
+              </div>
+              <div className="flex gap-3">
+                <button 
+                  onClick={() => {
+                    // Logic to support existing complaint
+                    alert("Support added to existing complaint!");
+                    navigate('/citizen');
+                  }}
+                  className="bg-orange-500 text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-orange-600 flex-1"
+                >
+                  Support Existing Issue
+                </button>
+                <button 
+                  onClick={() => setDuplicateResult(null)}
+                  className="bg-white border border-orange-200 text-orange-700 text-xs font-bold px-4 py-2 rounded-lg hover:bg-orange-100 flex-1"
+                >
+                  Continue as New
+                </button>
+              </div>
+            </div>
+          )}
         </section>
 
         {/* Voice Recording */}
@@ -477,14 +612,17 @@ const SubmitComplaint = () => {
         </section>
 
         {/* AI Insight Card */}
-        <section className="bg-blue-50 border border-blue-100 rounded-3xl p-6 sm:p-8 relative overflow-hidden shadow-sm mt-12">
+        <section className="bg-blue-50 border border-blue-100 rounded-3xl p-6 sm:p-8 relative overflow-hidden shadow-sm mt-12 mb-10">
           <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500 opacity-10 rounded-bl-full pointer-events-none -mt-4 -mr-4"></div>
           
           <div className="flex items-center gap-3 mb-6 relative z-10">
             <div className="w-10 h-10 rounded-2xl bg-white flex items-center justify-center shadow-sm text-blue-600">
               <BrainCircuit size={20} />
             </div>
-            <h3 className="text-lg font-extrabold text-blue-950 tracking-tight">AI Summary</h3>
+            <div>
+              <h3 className="text-lg font-extrabold text-blue-950 tracking-tight">AI Summary</h3>
+              <p className="text-xs text-blue-700 mt-1">{aiSummary.summary}</p>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 relative z-10">
@@ -493,12 +631,12 @@ const SubmitComplaint = () => {
               <span className="text-sm font-bold text-blue-950">{selectedCategory}</span>
             </div>
             <div className="bg-white rounded-2xl p-4 shadow-sm border border-blue-50/50 flex flex-col justify-center">
-              <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">Language</span>
-              <span className="text-sm font-bold text-blue-950">Hindi / English</span>
+              <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">Score</span>
+              <span className="text-sm font-bold text-blue-950">{aiSummary.score}/100</span>
             </div>
             <div className="bg-white rounded-2xl p-4 shadow-sm border border-blue-50/50 flex flex-col justify-center">
               <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">Priority</span>
-              <span className="text-sm font-bold text-red-600">High</span>
+              <span className={`text-sm font-bold ${aiSummary.priority === 'High' ? 'text-red-600' : aiSummary.priority === 'Critical' ? 'text-purple-600' : 'text-orange-500'}`}>{aiSummary.priority}</span>
             </div>
           </div>
         </section>
@@ -510,9 +648,10 @@ const SubmitComplaint = () => {
         <div className="max-w-3xl lg:max-w-4xl mx-auto flex">
           <button 
             onClick={handleSubmit}
-            className="flex-1 bg-blue-600 hover:bg-blue-500 active:scale-[0.98] text-white font-bold h-16 rounded-2xl shadow-[0_8px_20px_rgb(37,99,235,0.25)] transition-all flex items-center justify-center gap-2 text-lg"
+            disabled={isSubmitting}
+            className={`flex-1 ${isSubmitting ? 'bg-slate-400' : 'bg-blue-600 hover:bg-blue-500 active:scale-[0.98]'} text-white font-bold h-16 rounded-2xl shadow-[0_8px_20px_rgb(37,99,235,0.25)] transition-all flex items-center justify-center gap-2 text-lg`}
           >
-            Submit Complaint <ArrowRight size={20} />
+            {isSubmitting ? 'Submitting...' : <><CheckCircle2 size={20} /> Submit Complaint <ArrowRight size={20} /></>}
           </button>
         </div>
       </div>

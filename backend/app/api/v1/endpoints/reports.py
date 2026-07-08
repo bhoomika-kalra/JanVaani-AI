@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Query, Response
 from fastapi.responses import StreamingResponse
 from app.services.report_generator import report_generator
+from app.services.reporting.ReportService import report_service
 from ai.gemini_client import gemini_client
 
 router = APIRouter()
@@ -26,6 +27,11 @@ def build_response(title: str, report_type: str, dummy_data: dict, format: str):
     else:
         # Default JSON
         return report_generator.generate_json(title, summary, dummy_data)
+
+@router.post("/monthly")
+def generate_monthly_report_post():
+    """Generates and saves a complete AI Monthly PDF report using matplotlib and reportlab."""
+    return report_service.generate_monthly_report()
 
 @router.get("/monthly")
 def get_monthly_report(format: str = Query("json", description="Format: json, pdf, excel")):

@@ -1,5 +1,5 @@
 import logging
-from ai.schemas import ComplaintAnalysisResponse, VoiceAnalysisResponse, TranslationResponse, NextQuestionResponse, ImageAnalysisResponse, DuplicateCheckResponse, PriorityScoreResponse, ProjectRecommendationResponse, ExplainResponse, MPInsightsResponse
+from ai.schemas import ComplaintAnalysisResponse, VoiceAnalysisResponse, TranslationResponse, NextQuestionResponse, ImageAnalysisResponse, DuplicateCheckResponse, PriorityScoreResponse, ProjectRecommendationResponse, ExplainResponse, MPInsightsResponse, MorningBriefResponse, ChatResponse, ChatRelatedMetrics
 
 logger = logging.getLogger(__name__)
 
@@ -254,4 +254,76 @@ def get_mock_executive_summary(report_type: str, data: dict) -> str:
         "logging and road conditions. \n\n"
         "It is highly recommended to review the severe hotspots listed below and prioritize resource allocation accordingly. "
         "Proactive intervention in these highlighted zones is expected to significantly improve overall citizen satisfaction."
+    )
+
+def get_mock_morning_brief(constituency: str, mp_name: str) -> MorningBriefResponse:
+    logger.info("Using AI Fallback Mock for Morning Brief")
+    return MorningBriefResponse(
+        mp_name=mp_name,
+        constituency=constituency,
+        title="Today's AI Constituency Brief",
+        bullets=[
+            "17 new complaints overnight",
+            "Water complaints increased by 24%",
+            "Ward 14 is becoming critical",
+            "2 ongoing projects are delayed",
+            "AI recommends approving Water Pipeline Phase II today"
+        ],
+        estimated_impact="12,500 citizens",
+        priority="High",
+        generated_at="Today"
+    )
+
+def get_mock_chat_response(message: str, constituency: str) -> ChatResponse:
+    logger.info("Using AI Fallback Mock for Chat Response")
+    text_lower = message.lower()
+    
+    if "ward needs immediate attention" in text_lower:
+        return ChatResponse(
+            answer="Ward 14 needs immediate attention. It has the highest AI priority score of 98, severe waterlogging reports, and increased complaints before the upcoming monsoon.",
+            related_metrics=ChatRelatedMetrics(ward="Ward 14", priority_score=98, citizens_affected=12500)
+        )
+    elif "road complaints are pending" in text_lower:
+        return ChatResponse(
+            answer="There are 342 active infrastructure-related complaints, with road repair issues forming one of the top categories.",
+            related_metrics=ChatRelatedMetrics()
+        )
+    elif "generate monthly report" in text_lower:
+        return ChatResponse(
+            answer="This month, Kota recorded 1,248 complaints, 342 active issues, 12 AI-recommended projects, and 890 completed works. The highest priority concern is Ward 14 waterlogging.",
+            related_metrics=ChatRelatedMetrics()
+        )
+    elif "predict next month" in text_lower:
+        return ChatResponse(
+            answer="AI predicts sanitation and waterlogging complaints may increase next month due to upcoming monsoon patterns, especially in Ward 14 and Ward 08.",
+            related_metrics=ChatRelatedMetrics()
+        )
+    else:
+        return ChatResponse(
+            answer="I can help with JanVaani AI constituency insights, complaints, reports, and development priorities.",
+            related_metrics=ChatRelatedMetrics()
+        )
+
+def get_mock_feedback_analysis(comment: str, rating: int, status: str) -> FeedbackAnalysisResponse:
+    logger.info("Using AI Fallback Mock for Feedback Analysis")
+    sentiment = "Negative"
+    urgency = "Medium"
+    should_reopen = False
+    
+    if rating >= 4 or "yes" in status.lower():
+        sentiment = "Positive"
+        urgency = "Low"
+    elif rating == 3:
+        sentiment = "Neutral"
+    
+    if rating <= 2 or "not" in status.lower():
+        sentiment = "Negative"
+        urgency = "High"
+        should_reopen = True
+        
+    return FeedbackAnalysisResponse(
+        sentiment=sentiment,
+        urgency=urgency,
+        summary=f"Citizen feedback: '{comment[:50]}...'",
+        should_reopen=should_reopen
     )

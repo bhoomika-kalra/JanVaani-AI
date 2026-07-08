@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShieldCheck, UserCircle, MapPin, Globe, Fingerprint, ArrowRight } from 'lucide-react';
+import apiClient from '../services/apiClient';
 
 const CitizenRegister = () => {
   const navigate = useNavigate();
@@ -43,14 +44,41 @@ const CitizenRegister = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleRegister = (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
     if (validate()) {
-      // Save to localStorage as requested
-      localStorage.setItem('janvaani_citizen_profile', JSON.stringify(formData));
-      
-      // Navigate to Citizen Dashboard
-      navigate('/citizen');
+      try {
+        const payload = {
+          phone_number: formData.mobileNumber,
+          name: formData.fullName,
+          constituency: formData.villageCity,
+          language_preference: formData.preferredLanguage.toLowerCase()
+        };
+        const res = await apiClient.post('/citizens/register', payload);
+        const { access_token, citizen } = res.data;
+        
+        localStorage.setItem('janvaani_token', access_token);
+        
+        // Save local metadata not present in DB schema yet
+        const savedProfile = {
+            fullName: citizen.name || formData.fullName,
+            mobileNumber: citizen.phone_number || formData.mobileNumber,
+            gender: formData.gender,
+            age: formData.age,
+            state: formData.state,
+            villageCity: formData.villageCity,
+            residentialAddress: "",
+            constituency: citizen.constituency || formData.villageCity,
+            preferredLanguage: citizen.language_preference || formData.preferredLanguage,
+            govIdType: formData.govIdType,
+            govIdNumber: formData.govIdNumber
+        };
+        localStorage.setItem('janvaani_citizen_profile', JSON.stringify(savedProfile));
+        
+        navigate('/citizen');
+      } catch (err) {
+        alert(err.response?.data?.detail || 'Registration failed. Please try again.');
+      }
     }
   };
 

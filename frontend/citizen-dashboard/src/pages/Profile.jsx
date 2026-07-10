@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Edit3, ShieldAlert, FileText, Bell, Globe, HelpCircle, LogOut, Phone, MapPin, Mail, ChevronRight, Activity, CheckCircle2, AlertCircle, ThumbsUp, X, Save } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../services/apiClient';
+import { useProfile } from '../context/ProfileContext';
+import { getInitials, formatLanguage } from '../utils/profileUtils';
+import { citizenService } from '../services/citizenService';
 
 const supportedIssues = [
   { title: "No Electricity for 12 hours", location: "Rampura Main", status: "In Progress", supporters: 342 },
@@ -45,57 +48,32 @@ const Profile = () => {
     weekly: false
   });
 
-  // Read from localStorage or use fallback if not found
-  const getInitialProfile = () => {
-    const saved = localStorage.getItem('janvaani_citizen_profile');
-    if (saved) {
-      return JSON.parse(saved);
-    }
-    return {
-      fullName: "Ramesh Chand",
-      mobileNumber: "+91 98765 43210",
-      emailAddress: "ramesh.c@example.com",
-      residentialAddress: "12/A, Gandhi Nagar, Sector 4",
-      constituency: "Ward 12, West Zone",
-      preferredLanguage: "English"
-    };
+  const { profile, updateProfileState } = useProfile();
+  
+  const userInfo = profile || {
+    name: "",
+    phone_number: "",
+    email: "",
+    address: "",
+    state: "",
+    city_or_village: "",
+    pincode: "",
+    language_preference: "English",
+    verification_document_type: "",
+    masked_document_number: ""
   };
 
-  const [userInfo, setUserInfo] = useState(getInitialProfile());
   const [complaints, setComplaints] = useState([]);
   const [isLoadingComplaints, setIsLoadingComplaints] = useState(true);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchComplaints = async () => {
       try {
-        // Fetch Profile
-        const profileRes = await apiClient.get('/citizens/profile');
-        const citizen = profileRes.data;
-        
-        setUserInfo(prev => ({
-          ...prev,
-          fullName: citizen.name || prev.fullName,
-          mobileNumber: citizen.phone_number || prev.mobileNumber,
-          constituency: citizen.constituency || prev.constituency,
-          preferredLanguage: citizen.language_preference || prev.preferredLanguage
-        }));
-        setEditForm(prev => ({
-          ...prev,
-          fullName: citizen.name || prev.fullName,
-          mobileNumber: citizen.phone_number || prev.mobileNumber,
-          constituency: citizen.constituency || prev.constituency,
-          preferredLanguage: citizen.language_preference || prev.preferredLanguage
-        }));
-        if (citizen.language_preference) {
-          setSelectedLanguage(citizen.language_preference);
-        }
-
-        // Fetch Complaints
         setIsLoadingComplaints(true);
         const complaintsRes = await apiClient.get('/complaints/citizen/me');
         setComplaints(complaintsRes.data);
       } catch (err) {
-        console.error("Failed to fetch data", err);
+        console.error("Failed to fetch complaints", err);
         if (err.response?.status === 401 || err.response?.status === 403) {
           handleResetRegistration();
         }
@@ -103,14 +81,21 @@ const Profile = () => {
         setIsLoadingComplaints(false);
       }
     };
-    fetchData();
+    fetchComplaints();
   }, []);
 
   const [isEditingInfo, setIsEditingInfo] = useState(false);
   const [isEditingLanguage, setIsEditingLanguage] = useState(false);
   const [editForm, setEditForm] = useState({ ...userInfo });
 
-  const [selectedLanguage, setSelectedLanguage] = useState(userInfo.preferredLanguage);
+  useEffect(() => {
+    if (profile) {
+      setEditForm(profile);
+      setSelectedLanguage(profile.language_preference || "English");
+    }
+  }, [profile]);
+
+  const [selectedLanguage, setSelectedLanguage] = useState(userInfo.language_preference || "English");
   const [customLanguage, setCustomLanguage] = useState("");
   
   const [activeHelpItem, setActiveHelpItem] = useState(null);
@@ -122,16 +107,19 @@ const Profile = () => {
 
   const handleSaveInfo = async () => {
     try {
-      await apiClient.put('/citizens/profile', {
-        name: editForm.fullName,
-        constituency: editForm.constituency
-      });
-      setUserInfo({ ...editForm });
-      setSelectedLanguage(editForm.preferredLanguage);
+
+      const updated = {
+        name: editForm.name,
+        constituency: editForm.constituency,
+        email: editForm.email,
+        address: editForm.address,
+        state: editForm.state,
+        city_or_village: editForm.city_or_village,
+        pincode: editForm.pincode
+      };
+      await citizenService.updateProfile(updated);
+      updateProfileState(updated);
       setIsEditingInfo(false);
-      
-      const currentProfile = JSON.parse(localStorage.getItem('janvaani_citizen_profile') || '{}');
-      localStorage.setItem('janvaani_citizen_profile', JSON.stringify({ ...currentProfile, ...editForm }));
     } catch (err) {
       alert("Failed to update profile");
     }
@@ -142,18 +130,15 @@ const Profile = () => {
     setIsEditingInfo(false);
   };
 
-  const handleSaveLanguage = () => {
-    const finalLang = selectedLanguage === "Other" ? customLanguage : selectedLanguage;
-    setUserInfo(prev => ({ ...prev, preferredLanguage: finalLang }));
-    // If they typed something in "Other", we'll just consider it saved globally
-    if (selectedLanguage !== "Other") {
-       setEditForm(prev => ({ ...prev, preferredLanguage: finalLang }));
+  const handleSaveLanguage = async () => {
+    const finalLang = selectedLanguage === "Other (Please Specify)" ? customLanguage : selectedLanguage;
+    try {
+      await citizenService.updateProfile({ language_preference: finalLang });
+      updateProfileState({ language_preference: finalLang });
+      setIsEditingLanguage(false);
+    } catch (err) {
+      alert("Failed to update language");
     }
-    
-    // Save to local storage
-    const currentProfile = JSON.parse(localStorage.getItem('janvaani_citizen_profile') || '{}');
-    localStorage.setItem('janvaani_citizen_profile', JSON.stringify({ ...currentProfile, preferredLanguage: finalLang }));
-    setIsEditingLanguage(false);
   };
 
   const handleResetRegistration = () => {

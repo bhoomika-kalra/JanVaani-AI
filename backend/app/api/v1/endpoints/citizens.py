@@ -55,9 +55,39 @@ def login_citizen(data: CitizenLogin, db: Session = Depends(get_db)) -> Any:
     }
 
 @router.get("/profile", response_model=CitizenResponse)
-def get_profile(current_citizen: Citizen = Depends(get_current_citizen)) -> Any:
-    return current_citizen
-
+def get_profile(
+    db: Session = Depends(get_db),
+    current_citizen: Citizen = Depends(get_current_citizen)
+) -> Any:
+    from app.models.citizen_verification import CitizenVerification
+    verification = db.query(CitizenVerification).filter(CitizenVerification.citizen_id == current_citizen.id).first()
+    
+    profile_data = {
+        "id": current_citizen.id,
+        "phone_number": current_citizen.phone_number,
+        "name": current_citizen.name,
+        "constituency": current_citizen.constituency,
+        "language_preference": current_citizen.language_preference,
+        "email": current_citizen.email,
+        "address": current_citizen.address,
+        "state": current_citizen.state,
+        "city_or_village": current_citizen.city_or_village,
+        "pincode": current_citizen.pincode,
+        "latitude": current_citizen.latitude,
+        "longitude": current_citizen.longitude,
+        "created_at": current_citizen.created_at,
+    }
+    
+    if verification:
+        profile_data["verification_document_type"] = verification.id_type
+        id_num = verification.id_number
+        if len(id_num) > 4:
+            masked = "X" * (len(id_num) - 4) + id_num[-4:]
+        else:
+            masked = "XXXX"
+        profile_data["masked_document_number"] = masked
+        
+    return profile_data
 @router.put("/profile", response_model=CitizenResponse)
 def update_profile(
     data: CitizenUpdate, 
@@ -70,6 +100,21 @@ def update_profile(
         current_citizen.constituency = data.constituency
     if data.language_preference is not None:
         current_citizen.language_preference = data.language_preference
+    if data.email is not None:
+        current_citizen.email = data.email
+    if data.address is not None:
+        current_citizen.address = data.address
+    if data.state is not None:
+        current_citizen.state = data.state
+    if data.city_or_village is not None:
+        current_citizen.city_or_village = data.city_or_village
+    if data.pincode is not None:
+        current_citizen.pincode = data.pincode
+    if data.latitude is not None:
+        current_citizen.latitude = data.latitude
+    if data.longitude is not None:
+        current_citizen.longitude = data.longitude
+        
         
     db.commit()
     db.refresh(current_citizen)

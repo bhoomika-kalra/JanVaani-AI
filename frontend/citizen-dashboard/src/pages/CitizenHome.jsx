@@ -3,6 +3,8 @@ import { Search, MapPin, CheckCircle2, ChevronDown, Bell, Zap, Droplets, ShieldA
 import { useNavigate } from 'react-router-dom';
 import logo from '../assets/logo.svg';
 import { citizenService } from '../services/citizenService';
+import { useProfile } from '../context/ProfileContext';
+import { getInitials } from '../utils/profileUtils';
 import { communityService } from '../services/communityService';
 import { supportService } from '../services/supportService';
 import MapWrapper from '../components/maps/MapWrapper';
@@ -19,7 +21,7 @@ const CitizenHome = () => {
   const [showLocationPermission, setShowLocationPermission] = useState(true);
   const [mapLocation, setMapLocation] = useState([25.18, 75.83]);
   const [nearbyIssues, setNearbyIssues] = useState([]);
-  const [citizenProfile, setCitizenProfile] = useState(null);
+  const { profile, updateProfileState } = useProfile();
   const [liveUpdates, setLiveUpdates] = useState([]);
   const [dashboardStats, setDashboardStats] = useState({ active: 245, resolved: 180, ongoing: 24, helped: '12.5K' });
 
@@ -40,17 +42,17 @@ const CitizenHome = () => {
   const [showMapModal, setShowMapModal] = useState(false);
 
   useEffect(() => {
-    const loadProfileAndStats = async () => {
-      const profile = await citizenService.getProfile();
-      if (profile) {
-        setCitizenProfile(profile);
-        if (profile.city_or_village) setUserLocation(profile.city_or_village);
-        if (profile.state) setUserState(profile.state);
-        if (Number.isFinite(Number(profile.latitude)) && Number.isFinite(Number(profile.longitude))) {
-          setMapLocation([Number(profile.latitude), Number(profile.longitude)]);
-        }
+    if (profile) {
+      if (profile.city_or_village) setUserLocation(profile.city_or_village);
+      if (profile.state) setUserState(profile.state);
+      if (Number.isFinite(Number(profile.latitude)) && Number.isFinite(Number(profile.longitude))) {
+        setMapLocation([Number(profile.latitude), Number(profile.longitude)]);
       }
-      
+    }
+  }, [profile]);
+
+  useEffect(() => {
+    const loadStats = async () => {
       const myComplaints = await citizenService.getMyComplaints();
       const supported = await citizenService.getSupportedIssues();
       
@@ -61,7 +63,7 @@ const CitizenHome = () => {
         helped: 'N/A' // Could be sum of supporters on supported issues
       });
     };
-    loadProfileAndStats();
+    loadStats();
   }, []);
 
   const [activeCategory, setActiveCategory] = useState('All');
@@ -78,6 +80,13 @@ const CitizenHome = () => {
     
     // Save to backend
     await citizenService.updateProfile({
+      state: tempLocation.state,
+      city_or_village: tempLocation.city,
+      pincode: tempLocation.pincode
+    });
+    
+    // Update Context immediately
+    updateProfileState({
       state: tempLocation.state,
       city_or_village: tempLocation.city,
       pincode: tempLocation.pincode
@@ -255,7 +264,7 @@ const CitizenHome = () => {
               <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border border-white translate-x-1/2 -translate-y-1/2"></span>
             </button>
             <div onClick={() => navigate('/profile')} className="w-9 h-9 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-sm cursor-pointer shadow-sm hover:opacity-90">
-              C
+              {getInitials(profile?.name)}
             </div>
           </div>
         </header>
@@ -273,7 +282,7 @@ const CitizenHome = () => {
 
               <div className="xl:w-1/3">
                 <h1 className="text-3xl lg:text-4xl font-bold text-slate-900 leading-[1.15] mb-4">
-                  Welcome Back,<br />{citizenProfile ? citizenProfile.full_name : 'Citizen'}! <span className="text-3xl"></span>
+                  Namaste, {profile?.name ? profile.name.split(' ')[0] : 'Citizen'}
                 </h1>
                 <p className="text-slate-500 text-sm font-medium leading-relaxed max-w-sm">
                   Your voice helps build a better and stronger community.

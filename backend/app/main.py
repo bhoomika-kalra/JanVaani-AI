@@ -25,6 +25,20 @@ async def lifespan(app: FastAPI):
     logger.info("Initializing database tables...")
     Base.metadata.create_all(bind=engine)
     
+    logger.info("Running manual migrations...")
+    from sqlalchemy import text
+    new_columns = [
+        "email VARCHAR", "address VARCHAR", "state VARCHAR", 
+        "city_or_village VARCHAR", "pincode VARCHAR", 
+        "latitude VARCHAR", "longitude VARCHAR"
+    ]
+    with engine.begin() as conn:
+        for col in new_columns:
+            try:
+                conn.execute(text(f"ALTER TABLE citizen ADD COLUMN {col};"))
+            except Exception:
+                pass # Column already exists
+    
     db = SessionLocal()
     try:
         seed_db(db)

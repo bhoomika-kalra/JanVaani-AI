@@ -7,6 +7,13 @@ class CitizenBase(BaseModel):
     name: Optional[str] = None
     constituency: Optional[str] = None
     language_preference: Optional[str] = "english"
+    email: Optional[str] = None
+    address: Optional[str] = None
+    state: Optional[str] = None
+    city_or_village: Optional[str] = None
+    pincode: Optional[str] = None
+    latitude: Optional[str] = None
+    longitude: Optional[str] = None
 
 class CitizenCreate(CitizenBase):
     pass
@@ -19,10 +26,19 @@ class CitizenUpdate(BaseModel):
     name: Optional[str] = None
     constituency: Optional[str] = None
     language_preference: Optional[str] = None
+    email: Optional[str] = None
+    address: Optional[str] = None
+    state: Optional[str] = None
+    city_or_village: Optional[str] = None
+    pincode: Optional[str] = None
+    latitude: Optional[str] = None
+    longitude: Optional[str] = None
 
 class CitizenResponse(CitizenBase):
     id: int
     created_at: datetime
+    verification_document_type: Optional[str] = None
+    masked_document_number: Optional[str] = None
     
     class Config:
         from_attributes = True

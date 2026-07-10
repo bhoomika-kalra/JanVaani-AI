@@ -19,6 +19,7 @@ import EmergencyAlerts from './pages/EmergencyAlerts';
 import CitizenFeedback from './pages/CitizenFeedback';
 import MapTestPage from './pages/MapTestPage';
 import DevTestPage from './pages/DevTestPage';
+import { ProfileProvider } from './context/ProfileContext';
 
 const ProtectedCitizenRoute = ({ children }) => {
   const token = localStorage.getItem('janvaani_token');
@@ -44,8 +45,9 @@ export default function App() {
   }, []);
 
   return (
-    <BrowserRouter>
-      <Routes>
+    <ProfileProvider>
+      <BrowserRouter>
+        <Routes>
         <Route path="/" element={<LandingPage />} />
         
         {/* Public Citizen Routes */}
@@ -79,6 +81,7 @@ export default function App() {
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </BrowserRouter>
+      </BrowserRouter>
+    </ProfileProvider>
   );
 }

@@ -30,32 +30,39 @@ def register_mp(
     official_id_file: UploadFile = File(...),
     db: Session = Depends(get_db)
 ) -> Any:
-    logger.info(f"Received MP registration request for email: {email}")
+    logger.info("Received MP registration request")
+    
+    if not password or len(password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters long")
+    if len(password.encode('utf-8')) > 72:
+        raise HTTPException(status_code=400, detail="Password is too long (maximum 72 bytes)")
+
+    file_path = None
     try:
         existing_mp = db.query(MPUser).filter(
             (MPUser.email == email) | (MPUser.official_id_number == government_id)
         ).first()
         
         if existing_mp:
-            logger.warning(f"Registration failed: duplicate email {email} or ID {government_id}")
             raise HTTPException(status_code=409, detail="MP already registered with this email or official ID")
             
+        logger.info("Hashing password...")
+        hashed_password = get_password_hash(password)
+
         logger.info("Validation passed. Saving file...")
         try:
             os.makedirs("/tmp/janvaani_uploads", exist_ok=True)
             file_path = f"/tmp/janvaani_uploads/mp_{government_id}_{official_id_file.filename}"
             with open(file_path, "wb") as buffer:
                 shutil.copyfileobj(official_id_file.file, buffer)
-            logger.info(f"File saved successfully to {file_path}")
-        except Exception as e:
-            logger.error(f"Failed to save uploaded file: {str(e)}", exc_info=True)
+            logger.info("File saved successfully")
+        except Exception:
+            logger.exception("Failed to save uploaded file")
             raise HTTPException(status_code=500, detail="Failed to save identification document on the server.")
-            
-        logger.info("Hashing password...")
         mp_user = MPUser(
             full_name=full_name,
             email=email,
-            hashed_password=get_password_hash(password),
+            hashed_password=hashed_password,
             mobile=mobile_number,
             state=state,
             district=district,
@@ -78,14 +85,23 @@ def register_mp(
             "mp_user": mp_user
         }
     except HTTPException:
+        if file_path and os.path.exists(file_path):
+            try: os.remove(file_path)
+            except: pass
         raise
-    except sqlalchemy.exc.IntegrityError as e:
+    except sqlalchemy.exc.IntegrityError:
         logger.exception("Database integrity error during MP registration")
         db.rollback()
+        if file_path and os.path.exists(file_path):
+            try: os.remove(file_path)
+            except: pass
         raise HTTPException(status_code=409, detail="A user with these details already exists.")
-    except Exception as e:
+    except Exception:
         logger.exception("Unexpected error during MP registration")
         db.rollback()
+        if file_path and os.path.exists(file_path):
+            try: os.remove(file_path)
+            except: pass
         raise HTTPException(status_code=500, detail="An unexpected error occurred during registration. Please try again.")
 
 @router.post("/login", response_model=MPTokenResponse)

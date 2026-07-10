@@ -79,7 +79,7 @@ const MPRegistration = () => {
             setErrorMsg(err.response.data.detail);
         } else {
             // Pydantic validation error array
-            setErrorMsg(err.response.data.detail.map(e => `${e.loc[e.loc.length-1]}: ${e.msg}`).join(', '));
+            setErrorMsg(err.response.data.detail.map(e => `${e.loc ? e.loc[e.loc.length-1] : 'Field'}: ${e.msg}`).join(', '));
         }
       } else {
         // Network or CORS failure

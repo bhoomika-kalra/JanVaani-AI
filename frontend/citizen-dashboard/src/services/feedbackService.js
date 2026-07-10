@@ -3,7 +3,7 @@ import apiClient from './apiClient';
 export const feedbackService = {
   getFeedback: async () => {
     try {
-      const response = await apiClient.get('/mp/feedback');
+      const response = await apiClient.get('/feedback/mp');
       return response.data;
     } catch (error) {
       console.warn("Failed to fetch MP feedback", error);
@@ -16,7 +16,7 @@ export const feedbackService = {
   
   getFeedbackSummary: async () => {
     try {
-      const response = await apiClient.get('/mp/feedback/summary');
+      const response = await apiClient.get('/feedback/mp/summary');
       return response.data;
     } catch (error) {
       console.warn("Failed to fetch MP feedback summary", error);

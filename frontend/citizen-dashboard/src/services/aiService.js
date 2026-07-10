@@ -92,7 +92,7 @@ export const aiService = {
 
   generateExplainability: async (data) => {
     return withFallback(
-      () => apiClient.post('/ai/explain-priority', data),
+      () => apiClient.post('/ai/explain', data),
       {
         priorityScore: 50,
         priorityLabel: "Medium",

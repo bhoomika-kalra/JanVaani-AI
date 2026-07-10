@@ -208,9 +208,17 @@ const MPDashboard = () => {
 
     const fetchAiInsights = async () => {
       try {
-        const expl = await aiService.generateExplainability({ project_id: activeProjectId });
+        const expl = await aiService.generateExplainability({ 
+          context: `Project ${activeProjectId}`,
+          decision_type: 'Project Recommendation'
+        });
         setAiExplainability(expl);
-        const rec = await aiService.generateRecommendation({ constituency: 'Kota' });
+        const rec = await aiService.generateRecommendation({ 
+          constituency_complaints: ['Water supply issues in Ward 4', 'Potholes on MG Road'],
+          hotspots: ['Ward 4', 'MG Road'],
+          priority_score: 85,
+          support_count: 320
+        });
         setAiRecommendation(rec);
       } catch (error) {
         console.error(error);

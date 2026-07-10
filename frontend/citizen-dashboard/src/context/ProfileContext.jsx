@@ -24,7 +24,9 @@ export const ProfileProvider = ({ children }) => {
   useEffect(() => {
     // Only fetch if there's a token, otherwise we might be on login page
     const token = localStorage.getItem('janvaani_token');
-    if (token) {
+    const isMp = localStorage.getItem('mp_session');
+    
+    if (token && !isMp) {
       fetchProfile();
     } else {
       setIsLoading(false);

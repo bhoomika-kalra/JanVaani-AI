@@ -122,7 +122,14 @@ const MPDashboard = () => {
 
   const [mpSession, setMpSession] = useState(() => {
     const saved = localStorage.getItem('mp_session');
-    return saved ? JSON.parse(saved) : {
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return {
+        ...parsed,
+        name: parsed.name || parsed.full_name || 'MP User'
+      };
+    }
+    return {
       name: 'Om Birla',
       role: 'Member of Parliament',
       constituency: 'Kota Constituency',

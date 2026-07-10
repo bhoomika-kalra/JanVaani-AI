@@ -1,8 +1,10 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BrainCircuit, ShieldCheck, Upload, ArrowRight } from 'lucide-react';
+import { BrainCircuit, ShieldCheck, Upload, ArrowRight, AlertCircle } from 'lucide-react';
 import logo from '../assets/logo.svg';
 import apiClient from '../services/apiClient';
+
+const SafeAlertCircle = AlertCircle || (({ size, className }) => <span className={className} style={{ fontSize: size }}>!</span>);
 
 const MPRegistration = () => {
   const navigate = useNavigate();
@@ -64,9 +66,7 @@ const MPRegistration = () => {
 
     try {
       setErrorMsg('');
-      const res = await apiClient.post('/mp/register', formDataToSend, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      const res = await apiClient.post('/mp/register', formDataToSend);
       const { access_token, mp_user } = res.data;
       
       localStorage.setItem('janvaani_token', access_token);
@@ -98,7 +98,7 @@ const MPRegistration = () => {
         
         {errorMsg && (
           <div className="mt-4 p-4 rounded-xl bg-red-50 border border-red-200 flex items-start text-left gap-3 animate-in fade-in slide-in-from-top-2">
-            <AlertCircle className="text-red-500 shrink-0 mt-0.5" size={20} />
+            <SafeAlertCircle className="text-red-500 shrink-0 mt-0.5" size={20} />
             <p className="text-red-700 text-sm font-medium leading-relaxed">{errorMsg}</p>
           </div>
         )}

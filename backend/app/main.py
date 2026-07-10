@@ -56,13 +56,13 @@ def create_app() -> FastAPI:
         lifespan=lifespan
     )
 
-    # Set up CORS middleware
-    origins = [str(origin) for origin in settings.BACKEND_CORS_ORIGINS] if settings.BACKEND_CORS_ORIGINS else []
-    origins.extend(["https://jan-vaani-ai-one.vercel.app", "http://localhost:5173"])
-    
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=origins,
+        allow_origins=[
+            "http://localhost:5173",
+            "http://localhost:3000",
+            "https://jan-vaani-ai-one.vercel.app"
+        ],
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],

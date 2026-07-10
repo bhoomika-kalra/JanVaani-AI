@@ -13,6 +13,7 @@ const MPRegistration = () => {
   const [uploadedFile, setUploadedFile] = useState(null);
   const fileInputRef = useRef(null);
   const [errorMsg, setErrorMsg] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -33,8 +34,10 @@ const MPRegistration = () => {
 
   const handleRegister = async (e) => {
     e.preventDefault();
-    if(!formData.name || !formData.constituency) {
-      setErrorMsg("Name and Constituency are required!");
+    if (isSubmitting) return;
+
+    if (!formData.name || !formData.email || !formData.mobile || !formData.constituency || !formData.idNumber) {
+      setErrorMsg("All text fields are required.");
       return;
     }
     
@@ -53,6 +56,8 @@ const MPRegistration = () => {
       setErrorMsg("Please upload your official ID for verification.");
       return;
     }
+
+    setIsSubmitting(true);
 
     const formDataToSend = new FormData();
     formDataToSend.append('full_name', formData.name);
@@ -76,17 +81,16 @@ const MPRegistration = () => {
       navigate('/mp-dashboard', { replace: true });
     } catch (err) {
       if (err.response?.data?.detail) {
-        // Validation or explicit HTTP errors
         if (typeof err.response.data.detail === 'string') {
             setErrorMsg(err.response.data.detail);
         } else {
-            // Pydantic validation error array
             setErrorMsg(err.response.data.detail.map(e => `${e.loc ? e.loc[e.loc.length-1] : 'Field'}: ${e.msg}`).join(', '));
         }
       } else {
-        // Network or CORS failure
-        setErrorMsg('Registration failed. The server is unreachable or CORS blocked the request.');
+        setErrorMsg('Registration failed. Please try again.');
       }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -251,9 +255,10 @@ const MPRegistration = () => {
             <div className="pt-8 mt-8 border-t border-slate-100">
               <button
                 type="submit"
-                className="w-full flex justify-center items-center gap-2 py-4 px-4 border border-transparent rounded-xl shadow-[0_8px_20px_rgb(37,99,235,0.25)] text-lg font-bold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none transition-all hover:-translate-y-1"
+                disabled={isSubmitting}
+                className={`w-full flex justify-center items-center gap-2 py-4 px-4 border border-transparent rounded-xl shadow-[0_8px_20px_rgb(37,99,235,0.25)] text-lg font-bold text-white transition-all ${isSubmitting ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 hover:-translate-y-1 focus:outline-none'}`}
               >
-                Create Official Account <ArrowRight size={20} />
+                {isSubmitting ? 'Creating Account...' : 'Create Official Account'} <ArrowRight size={20} />
               </button>
             </div>
           </form>

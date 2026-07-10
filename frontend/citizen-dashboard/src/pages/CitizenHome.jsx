@@ -156,7 +156,9 @@ const CitizenHome = () => {
           aiPriority: c.priority_score || 60,
           distance: c.distance || "0.5 km",
           isSupported: c.isSupported || false,
-          image: c.image || "https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?w=500&q=80"
+          image: c.image || "https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?w=500&q=80",
+          latitude: c.latitude || 24.58 + (Math.random() * 0.05 - 0.025),
+          longitude: c.longitude || 73.68 + (Math.random() * 0.05 - 0.025)
         }));
         
         setIssuesState(mappedIssues.slice(0, 3)); // Display maximum 3

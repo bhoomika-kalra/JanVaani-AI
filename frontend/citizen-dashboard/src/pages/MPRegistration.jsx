@@ -73,7 +73,7 @@ const MPRegistration = () => {
       
       localStorage.setItem('janvaani_token', access_token);
       localStorage.setItem('mp_session', JSON.stringify(mp_user));
-      navigate('/mp-dashboard');
+      navigate('/mp-dashboard', { replace: true });
     } catch (err) {
       if (err.response?.data?.detail) {
         // Validation or explicit HTTP errors

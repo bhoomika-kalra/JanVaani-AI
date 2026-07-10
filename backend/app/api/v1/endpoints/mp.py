@@ -40,12 +40,15 @@ def register_mp(
             raise HTTPException(status_code=400, detail="MP already registered with this email or official ID")
             
         logger.info("Validation passed. Saving file...")
-        os.makedirs("uploads/documents", exist_ok=True)
-        file_path = f"uploads/documents/mp_{official_id_number}_{file.filename}"
-        
-        with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-        logger.info(f"File saved successfully to {file_path}")
+        try:
+            os.makedirs("uploads/documents", exist_ok=True)
+            file_path = f"uploads/documents/mp_{official_id_number}_{file.filename}"
+            with open(file_path, "wb") as buffer:
+                shutil.copyfileobj(file.file, buffer)
+            logger.info(f"File saved successfully to {file_path}")
+        except Exception as e:
+            logger.error(f"Failed to save uploaded file: {str(e)}", exc_info=True)
+            raise HTTPException(status_code=500, detail="Failed to save identification document on the server.")
             
         logger.info("Hashing password...")
         mp_user = MPUser(

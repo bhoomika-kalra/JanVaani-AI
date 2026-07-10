@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { BrainCircuit, ShieldCheck, Upload, ArrowRight, AlertCircle } from 'lucide-react';
 import logo from '../assets/logo.svg';
 import apiClient from '../services/apiClient';
+import axios from 'axios';
 
 const SafeAlertCircle = AlertCircle || (({ size, className }) => <span className={className} style={{ fontSize: size }}>!</span>);
 
@@ -66,7 +67,8 @@ const MPRegistration = () => {
 
     try {
       setErrorMsg('');
-      const res = await apiClient.post('/mp/register', formDataToSend);
+      const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
+      const res = await axios.post(`${baseURL}/mp/register`, formDataToSend);
       const { access_token, mp_user } = res.data;
       
       localStorage.setItem('janvaani_token', access_token);

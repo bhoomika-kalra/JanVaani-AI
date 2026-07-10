@@ -9,6 +9,7 @@ const MPRegistration = () => {
   
   const [uploadedFile, setUploadedFile] = useState(null);
   const fileInputRef = useRef(null);
+  const [errorMsg, setErrorMsg] = useState('');
 
   const [formData, setFormData] = useState({
     name: '',
@@ -30,23 +31,23 @@ const MPRegistration = () => {
   const handleRegister = async (e) => {
     e.preventDefault();
     if(!formData.name || !formData.constituency) {
-      alert("Name and Constituency are required!");
+      setErrorMsg("Name and Constituency are required!");
       return;
     }
     
     if(!formData.password || formData.password.length < 6) {
-      alert("Password must be at least 6 characters long.");
+      setErrorMsg("Password must be at least 6 characters long.");
       return;
     }
     
     if(formData.password !== formData.confirmPassword) {
-      alert("Passwords do not match.");
+      setErrorMsg("Passwords do not match.");
       return;
     }
     
     const fileToUpload = fileInputRef.current?.files?.[0];
     if (!fileToUpload) {
-      alert("Please upload your official ID for verification.");
+      setErrorMsg("Please upload your official ID for verification.");
       return;
     }
 
@@ -62,6 +63,7 @@ const MPRegistration = () => {
     formDataToSend.append('file', fileToUpload);
 
     try {
+      setErrorMsg('');
       const res = await apiClient.post('/mp/register', formDataToSend, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
@@ -71,7 +73,18 @@ const MPRegistration = () => {
       localStorage.setItem('mp_session', JSON.stringify(mp_user));
       navigate('/mp-dashboard');
     } catch (err) {
-      alert(err.response?.data?.detail || 'Registration failed.');
+      if (err.response?.data?.detail) {
+        // Validation or explicit HTTP errors
+        if (typeof err.response.data.detail === 'string') {
+            setErrorMsg(err.response.data.detail);
+        } else {
+            // Pydantic validation error array
+            setErrorMsg(err.response.data.detail.map(e => `${e.loc[e.loc.length-1]}: ${e.msg}`).join(', '));
+        }
+      } else {
+        // Network or CORS failure
+        setErrorMsg('Registration failed. The server is unreachable or CORS blocked the request.');
+      }
     }
   };
 
@@ -82,6 +95,13 @@ const MPRegistration = () => {
         <img src={logo} alt="JanVaani AI Logo" className="h-[120px] w-auto mx-auto mb-4 drop-shadow-lg" />
         <h2 className="text-3xl font-black text-slate-900 tracking-tight">JanVaani <span className="text-[#3B5BFF]">AI</span></h2>
         <p className="mt-2 text-sm font-bold text-slate-500 uppercase tracking-widest">Official Registration Portal</p>
+        
+        {errorMsg && (
+          <div className="mt-4 p-4 rounded-xl bg-red-50 border border-red-200 flex items-start text-left gap-3 animate-in fade-in slide-in-from-top-2">
+            <AlertCircle className="text-red-500 shrink-0 mt-0.5" size={20} />
+            <p className="text-red-700 text-sm font-medium leading-relaxed">{errorMsg}</p>
+          </div>
+        )}
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-2xl">

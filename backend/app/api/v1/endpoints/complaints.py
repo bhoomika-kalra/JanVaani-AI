@@ -4,7 +4,7 @@ import random
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
-from typing import Any, List
+from typing import Any, List, Optional
 
 from app.database.session import get_db
 from app.core.auth import get_current_citizen
@@ -83,6 +83,18 @@ def get_my_complaints(
     complaints = db.query(Complaint).filter(Complaint.citizen_id == current_citizen.id).order_by(Complaint.created_at.desc()).all()
     return complaints
 
+@router.get("/nearby")
+def get_nearby_complaints(
+    state: Optional[str] = None,
+    city_or_village: Optional[str] = None,
+    pincode: Optional[str] = None,
+    latitude: Optional[float] = None,
+    longitude: Optional[float] = None,
+    db: Session = Depends(get_db)
+) -> Any:
+    # Prototype: Just return all complaints to simulate 'nearby'
+    return db.query(Complaint).all()
+
 @router.get("/{complaint_id}", response_model=ComplaintResponse)
 def get_complaint(complaint_id: int, db: Session = Depends(get_db)) -> Any:
     complaint = db.query(Complaint).filter(Complaint.id == complaint_id).first()
@@ -114,10 +126,6 @@ def support_complaint(
     total_supports = db.query(ComplaintSupport).filter(ComplaintSupport.complaint_id == complaint_id).count()
     return {"complaint_id": complaint_id, "total_supports": total_supports}
 
-@router.get("/nearby/")
-def get_nearby_complaints(db: Session = Depends(get_db)) -> Any:
-    # Prototype: Just return all complaints to simulate 'nearby'
-    return db.query(Complaint).all()
 
 ALLOWED_EXTENSIONS = {
     "image": [".jpg", ".jpeg", ".png"],

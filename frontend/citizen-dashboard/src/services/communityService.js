@@ -8,6 +8,9 @@ export const communityService = {
       return response.data;
     } catch (error) {
       console.warn("Failed to fetch nearby complaints", error);
+      if (error.response?.status === 422) {
+        console.error("422 Validation Error Details:", error.response.data);
+      }
       // Fallback
       return [
         {
@@ -23,6 +26,8 @@ export const communityService = {
           iconBg: "bg-orange-100 text-orange-600",
           supporters: 12,
           isSupported: false,
+          latitude: 24.582,
+          longitude: 73.682,
           image: "https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?w=500&q=80"
         },
         {
@@ -38,6 +43,8 @@ export const communityService = {
           iconBg: "bg-blue-100 text-blue-600",
           supporters: 8,
           isSupported: true,
+          latitude: 24.585,
+          longitude: 73.685,
           image: "https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?w=500&q=80"
         }
       ];

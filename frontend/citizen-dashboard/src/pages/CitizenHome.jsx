@@ -46,7 +46,9 @@ const CitizenHome = () => {
         setCitizenProfile(profile);
         if (profile.city_or_village) setUserLocation(profile.city_or_village);
         if (profile.state) setUserState(profile.state);
-        if (profile.latitude && profile.longitude) setMapLocation([profile.latitude, profile.longitude]);
+        if (Number.isFinite(Number(profile.latitude)) && Number.isFinite(Number(profile.longitude))) {
+          setMapLocation([Number(profile.latitude), Number(profile.longitude)]);
+        }
       }
       
       const myComplaints = await citizenService.getMyComplaints();
@@ -407,17 +409,26 @@ const CitizenHome = () => {
               {/* Map Preview */}
               <div className="bg-white p-2 rounded-3xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-slate-200 mb-8 overflow-hidden">
                 <div style={{ height: '300px', width: '100%', borderRadius: '20px', overflow: 'hidden', position: 'relative', zIndex: 10 }}>
-                  <MapWrapper center={mapLocation} zoom={13} style={{ height: '100%', width: '100%' }}>
-                    <UserLocationMarker position={mapLocation} />
-                    {nearbyIssues.map(issue => (
-                      <ComplaintMarker 
-                        key={issue.id}
-                        position={[issue.latitude, issue.longitude]} 
-                        color={issue.priority_score > 90 ? 'red' : issue.priority_score > 60 ? 'orange' : 'green'} 
-                        data={{ title: issue.title, category: issue.category, status: issue.status, priority: issue.priority_score > 90 ? 'High' : issue.priority_score > 60 ? 'Medium' : 'Low', location: issue.city_or_village, support: issue.supporters }} 
-                        onViewDetails={() => navigate('/track-complaint')}
-                      />
-                    ))}
+                  <MapWrapper 
+                    center={Number.isFinite(Number(mapLocation[0])) && Number.isFinite(Number(mapLocation[1])) ? [Number(mapLocation[0]), Number(mapLocation[1])] : [24.585, 73.685]} 
+                    zoom={13} 
+                    style={{ height: '100%', width: '100%' }}
+                  >
+                    <UserLocationMarker position={Number.isFinite(Number(mapLocation[0])) && Number.isFinite(Number(mapLocation[1])) ? [Number(mapLocation[0]), Number(mapLocation[1])] : [24.585, 73.685]} />
+                    {nearbyIssues.map(issue => {
+                      const lat = Number(issue.latitude);
+                      const lng = Number(issue.longitude);
+                      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+                      return (
+                        <ComplaintMarker 
+                          key={issue.id}
+                          position={[lat, lng]} 
+                          color={issue.priority_score > 90 ? 'red' : issue.priority_score > 60 ? 'orange' : 'green'} 
+                          data={{ title: issue.title, category: issue.category, status: issue.status, priority: issue.priority_score > 90 ? 'High' : issue.priority_score > 60 ? 'Medium' : 'Low', location: issue.city_or_village, support: issue.supporters }} 
+                          onViewDetails={() => navigate('/track-complaint')}
+                        />
+                      );
+                    })}
                   </MapWrapper>
                 </div>
               </div>

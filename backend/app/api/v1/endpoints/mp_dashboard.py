@@ -69,8 +69,8 @@ def get_explainability(id: str, region_filter: dict = Depends(get_mp_region_filt
 def get_hotspots(region_filter: dict = Depends(get_mp_region_filter)):
     # Dummy lat/lng for heatmaps
     return [
-        {"lat": 28.6139, "lng": 77.2090, "intensity": 85, "category": "Roads"},
-        {"lat": 28.6200, "lng": 77.2100, "intensity": 45, "category": "Water"}
+        {"id": "hs-1", "lat": 28.6139, "lng": 77.2090, "intensity": 85, "category": "Roads", "ward": "Ward 14", "priority_score": 92, "citizens_affected": 450},
+        {"id": "hs-2", "lat": 28.6200, "lng": 77.2100, "intensity": 45, "category": "Water", "ward": "Ward 22", "priority_score": 75, "citizens_affected": 210}
     ]
 
 @router.get("/category-analytics", response_model=List[CategoryStat])

@@ -856,8 +856,8 @@ const MPDashboard = () => {
                 {/* The Map */}
                 <div style={{ height: '450px', width: '100%', position: 'relative', zIndex: 10 }}>
                   <MapWrapper center={[25.18, 75.83]} zoom={13} style={{ height: '100%', width: '100%' }}>
-                    {mpHotspots.map(hotspot => (
-                      <Marker key={hotspot.id} position={[hotspot.latitude, hotspot.longitude]} icon={getColoredIcon(hotspot.color || (hotspot.priority_score > 90 ? 'red' : hotspot.priority_score > 60 ? 'orange' : 'green'))}>
+                    {mpHotspots.map((hotspot, index) => (
+                      <Marker key={index} position={[hotspot.lat, hotspot.lng]} icon={getColoredIcon(hotspot.color || (hotspot.priority_score > 90 ? 'red' : hotspot.priority_score > 60 ? 'orange' : 'green'))}>
                         <Popup className="custom-popup">
                           <div className="p-1 min-w-[220px]">
                             <h3 className="font-black text-slate-900 text-base mb-1">{hotspot.ward}</h3>

@@ -41,10 +41,14 @@ class ExplainabilityResponse(BaseModel):
     similarHistoricalCase: str
 
 class Hotspot(BaseModel):
+    id: str
     lat: float
     lng: float
     intensity: int
     category: str
+    ward: str
+    priority_score: int
+    citizens_affected: int
 
 class CategoryStat(BaseModel):
     name: str

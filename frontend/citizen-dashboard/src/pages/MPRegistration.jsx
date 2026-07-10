@@ -57,13 +57,13 @@ const MPRegistration = () => {
     const formDataToSend = new FormData();
     formDataToSend.append('full_name', formData.name);
     formDataToSend.append('email', formData.email);
-    formDataToSend.append('mobile', formData.mobile);
-    formDataToSend.append('state', formData.state);
-    formDataToSend.append('district', formData.district);
+    formDataToSend.append('mobile_number', formData.mobile);
+    if (formData.state) formDataToSend.append('state', formData.state);
+    if (formData.district) formDataToSend.append('district', formData.district);
     formDataToSend.append('constituency', formData.constituency);
-    formDataToSend.append('official_id_number', formData.idNumber);
+    formDataToSend.append('government_id', formData.idNumber);
     formDataToSend.append('password', formData.password);
-    formDataToSend.append('file', fileToUpload);
+    formDataToSend.append('official_id_file', fileToUpload);
 
     try {
       setErrorMsg('');

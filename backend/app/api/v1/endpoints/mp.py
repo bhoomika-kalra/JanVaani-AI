@@ -13,6 +13,7 @@ from app.schemas.mp import MPLogin, MPUpdate, MPResponse, MPTokenResponse
 router = APIRouter()
 
 import logging
+import sqlalchemy
 
 logger = logging.getLogger(__name__)
 
@@ -20,31 +21,31 @@ logger = logging.getLogger(__name__)
 def register_mp(
     full_name: str = Form(...),
     email: str = Form(...),
-    mobile: str = Form(...),
-    state: str = Form(...),
-    district: str = Form(...),
+    mobile_number: str = Form(...),
+    state: str = Form(None),
+    district: str = Form(None),
     constituency: str = Form(...),
-    official_id_number: str = Form(...),
+    government_id: str = Form(...),
     password: str = Form(...),
-    file: UploadFile = File(...),
+    official_id_file: UploadFile = File(...),
     db: Session = Depends(get_db)
 ) -> Any:
     logger.info(f"Received MP registration request for email: {email}")
     try:
         existing_mp = db.query(MPUser).filter(
-            (MPUser.email == email) | (MPUser.official_id_number == official_id_number)
+            (MPUser.email == email) | (MPUser.official_id_number == government_id)
         ).first()
         
         if existing_mp:
-            logger.warning(f"Registration failed: duplicate email {email} or ID {official_id_number}")
-            raise HTTPException(status_code=400, detail="MP already registered with this email or official ID")
+            logger.warning(f"Registration failed: duplicate email {email} or ID {government_id}")
+            raise HTTPException(status_code=409, detail="MP already registered with this email or official ID")
             
         logger.info("Validation passed. Saving file...")
         try:
-            os.makedirs("uploads/documents", exist_ok=True)
-            file_path = f"uploads/documents/mp_{official_id_number}_{file.filename}"
+            os.makedirs("/tmp/janvaani_uploads", exist_ok=True)
+            file_path = f"/tmp/janvaani_uploads/mp_{government_id}_{official_id_file.filename}"
             with open(file_path, "wb") as buffer:
-                shutil.copyfileobj(file.file, buffer)
+                shutil.copyfileobj(official_id_file.file, buffer)
             logger.info(f"File saved successfully to {file_path}")
         except Exception as e:
             logger.error(f"Failed to save uploaded file: {str(e)}", exc_info=True)
@@ -55,11 +56,11 @@ def register_mp(
             full_name=full_name,
             email=email,
             hashed_password=get_password_hash(password),
-            mobile=mobile,
+            mobile=mobile_number,
             state=state,
             district=district,
             constituency=constituency,
-            official_id_number=official_id_number,
+            official_id_number=government_id,
             id_document_path=file_path,
             role="mp"
         )
@@ -78,8 +79,12 @@ def register_mp(
         }
     except HTTPException:
         raise
+    except sqlalchemy.exc.IntegrityError as e:
+        logger.exception("Database integrity error during MP registration")
+        db.rollback()
+        raise HTTPException(status_code=409, detail="A user with these details already exists.")
     except Exception as e:
-        logger.error(f"Unexpected error during MP registration: {str(e)}", exc_info=True)
+        logger.exception("Unexpected error during MP registration")
         db.rollback()
         raise HTTPException(status_code=500, detail="An unexpected error occurred during registration. Please try again.")
 

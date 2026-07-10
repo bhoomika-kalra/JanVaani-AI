@@ -840,8 +840,12 @@ const MPDashboard = () => {
                 {/* Filters & Legend */}
                 <div className="px-6 py-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-4">
                   <div className="flex flex-wrap gap-2">
-                    {['All', 'Water', 'Road', 'Electricity', 'Sanitation', 'Healthcare'].map((filter) => (
-                      <button key={filter} className={`px-4 py-1.5 rounded-full text-xs font-bold transition-colors ${filter === 'All' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
+                    {['All', 'Water', 'Roads', 'Electricity', 'Sanitation', 'Healthcare'].map((filter) => (
+                      <button 
+                        key={filter} 
+                        onClick={() => setComplaintCategoryFilter(filter)}
+                        className={`px-4 py-1.5 rounded-full text-xs font-bold transition-colors ${filter === complaintCategoryFilter ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                      >
                         {filter}
                       </button>
                     ))}
@@ -856,7 +860,9 @@ const MPDashboard = () => {
                 {/* The Map */}
                 <div style={{ height: '450px', width: '100%', position: 'relative', zIndex: 10 }}>
                   <MapWrapper center={[25.18, 75.83]} zoom={13} style={{ height: '100%', width: '100%' }}>
-                    {mpHotspots.map((hotspot, index) => (
+                    {mpHotspots
+                      .filter(hotspot => complaintCategoryFilter === 'All' || hotspot.category === complaintCategoryFilter)
+                      .map((hotspot, index) => (
                       <Marker key={index} position={[hotspot.lat, hotspot.lng]} icon={getColoredIcon(hotspot.color || (hotspot.priority_score > 90 ? 'red' : hotspot.priority_score > 60 ? 'orange' : 'green'))}>
                         <Popup className="custom-popup">
                           <div className="p-1 min-w-[220px]">
